@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 import json
+import sys
 import math
 import queue
 import threading
 import time
 import geohash
 import requests
+from elasticsearch import Elasticsearch, RequestsHttpConnection
 
 
 class Memory:
@@ -36,26 +38,32 @@ class Memory:
      The possibility also exists for road mapping, i.e. snapping location points to the closest road that the pattern follows
      in google maps.
     """
-    def __init__(self, api_key):
+    def __init__(self, api_key, aws_auth):
         self.first = MemoryBranch()
-        self.last_payload = {"pos.lat": 0.0, "pos.lon": 0.0, "meta.deviceepoch": 0.0}
+        self.last_payload = {"pos.lat": 0.0, "pos.lon": 0.0, "meta.deviceepoch": time.time()}
         self.decoder = json.JSONDecoder()
-        self.queue = queue.Queue()
-        self.geocoder = Geocoder("geocoder", self.queue, api_key)
+        self.upl_queue = queue.Queue()
+        self.uploader = Uploader("Uploader", self.upl_queue, aws_auth)
+        self.uploader.start()
+        self.geo_queue = queue.Queue()
+        self.geocoder = Geocoder("Geocoder", self.geo_queue, self.upl_queue, api_key)
         self.geocoder.start()
 
-    def verify(self, msg) -> dict:
+    def verify(self, msg_payload) -> dict:
         """
         Makes sure there are no errors in parsing JSON.
 
         If errors are found, it returns a dict with one key: "error", which an outer function should check for
-        :param msg: message received by mqtt broker
+        :param msg_payload: message received by mqtt broker
         :return: a dictionary, with either one key and value: 'error', or the full message
         """
         try:
-            payload = self.decoder.decode(str(msg.payload)[2:-1].replace('\'', '\"'))
+            payload = self.decoder.decode(str(msg_payload)[2:-1].replace('\'', '\"'))
         except json.JSONDecodeError:
-            payload = self.decoder.decode('{\"error\": \"message not able to be parsed\"}')
+            try:
+                payload = self.decoder.decode(str(msg_payload).replace('\'', '\"'))
+            except json.JSONDecodeError:
+                payload = self.decoder.decode('{\"error\": \"message not able to be parsed\"}')
         return payload
 
     def insert(self, top, geo_hash, payload):
@@ -68,7 +76,7 @@ class Memory:
         :return: None
         """
         current = top
-        self.queue.put(payload)
+        self.geo_queue.put(payload)
         for digit in geo_hash:
             current = current.make_child(digit)
         current.make_child(value=payload, make_leaf=True)
@@ -128,8 +136,10 @@ class Memory:
                 self.search_else_insert(geo_hash, payload)
                 self.last_payload = payload
                 return True
+            self.upl_queue.put(payload)
             return False
         else:
+            self.upl_queue.put(payload)
             self.last_payload = payload
             return False
 
@@ -140,21 +150,26 @@ class Memory:
         The Geocoder thread should not stop until self.queue (the same queue that the thread uses) is empty.
         :return: None
         """
-        self.stop_geocoder()
+        self.stop_threads()
+
         self.geocoder.join()
 
     def wait_for(self, thing):
-        while thing in self.queue:
+        while thing in self.geo_queue:
             time.sleep(0.1)
 
-    def stop_geocoder(self):
+    def stop_threads(self):
         """
         Waits for self.queue to empty out, then calls for the thread to stop.
         :return: None
         """
-        while not self.queue.empty():
+        while not self.geo_queue.empty():
             time.sleep(0.1)
         self.geocoder.stop_thread()
+
+        while not self.upl_queue.empty():
+            time.sleep(0.1)
+        self.uploader.stop_thread()
 
 
 class MemoryNode:
@@ -217,26 +232,86 @@ class Geocoder(threading.Thread):
     Geocoding takes a large amount of time compared to everything else, so putting it in a separate thread of control
     allows geocoding to be performed while the program runs other things.
     """
-    def __init__(self, name, queue, api_key):
+    def __init__(self, name, geo_queue, upl_queue, api_key):
         threading.Thread.__init__(self, name=name)
-        self.queue = queue
+        self.__stop = False
+        self.geo_queue = geo_queue
+        self.upl_queue = upl_queue
         self.decoder = json.JSONDecoder()
         self.api_key = api_key
-        self.__stop = False
 
     def run(self):
-        while 1:
-            if self.queue.empty():
-                time.sleep(0.1)
-            if self.__stop:
-                break
-            payload = self.queue.get()
-            response = requests.get("https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
-                                    str(payload['pos.lat']) + ',' + str(payload['pos.lon']) + "&key=" + self.api_key)
-            location = response.json()['results'][0]
+        try:
+            while 1:
+                if self.__stop:
+                    exit(0)
+                if self.geo_queue.empty():
+                    time.sleep(0.01)
+                    continue
 
-            for dict in location['address_components']:
-                payload['geo.'+dict['types'][0]] = dict['long_name']
+                payload = self.geo_queue.get()
+                response = requests.get("https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
+                                    str(payload['pos.lat']) + ',' + str(payload['pos.lon']) + "&key=" + self.api_key)
+                location = response.json()['results'][0]
+
+                payload["meta.type"] = "geocode"
+                for dictn in location['address_components']:
+                    payload['geo.'+dictn['types'][0]] = dictn['long_name']
+                self.upl_queue.put(payload)
+        except:
+            print("Unknown error in geocoder: " + str(sys.exc_info()))
+
+    def stop_thread(self):
+        """
+        Should not be called unless self.queue is empty
+        :return: None
+        """
+        self.__stop = True
+
+class Uploader(threading.Thread):
+    def __init__(self, name, upl_queue, aws_auth):
+        threading.Thread.__init__(self, name=name)
+        self.__stop = False
+
+        endpoint = "search-chriswillelasticsearch-sbzs5dhk3efss3t4bidlxmym7u.us-east-1.es.amazonaws.com"
+        self.esnode = Elasticsearch(
+            hosts=[{'host': endpoint, 'port': 443}],
+            http_auth=aws_auth,
+            use_ssl=True,
+            verify_certs=True,
+            connection_class=RequestsHttpConnection
+        )
+
+        self.upl_queue = upl_queue
+
+    def run(self):
+        es_log = open("/home/ubuntu/chrisStuff/es_log.txt", "w")
+        try:
+            while 1:
+                if self.__stop:
+                    exit(0)
+                if self.upl_queue.empty():
+                    es_log.write("queue empty\n")
+                    time.sleep(0.01)
+                    continue
+
+                payload = self.upl_queue.get()
+                if payload["meta.type"] == "geocode":
+                    self.upload_geocode(payload)
+                    es_log.write("sent geocode payload\n")
+                else:
+                    self.upload_location(payload)
+                    es_log.write("sent location payload\n")
+        except:
+            print("Unknown error in uploader: " + str(sys.exc_info()))
+        finally:
+            es_log.close()
+
+    def upload_geocode(self, payload):
+        self.esnode.index(index=payload["meta.devID"], doc_type="geocode_data", body=payload)
+
+    def upload_location(self, payload):
+        self.esnode.index(index=payload["meta.devID"], doc_type="location_data", body=payload)
 
     def stop_thread(self):
         """
