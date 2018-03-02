@@ -4,7 +4,6 @@ import time, gpsd, re, subprocess
 
 
 if __name__ == '__main__':
-    months = []
     log = open('/home/pi/Desktop/gpsdmqttlog.log', 'w')
     try:
         log.write('----------LOG STARTED----------\n\n')

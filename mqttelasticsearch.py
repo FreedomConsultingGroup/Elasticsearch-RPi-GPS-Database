@@ -9,7 +9,7 @@ def main():
     keys = open("/home/ubuntu/chrisStuff/keys.txt", 'r')
     aws_key = keys.readline().replace('\n', '')
     aws_secret = keys.readline().replace('\n', '')
-    googleapikey = keys.readline().replace('\n', '')
+    google_api_key = keys.readline().replace('\n', '')
     keys.close()
 
 
@@ -35,7 +35,7 @@ def main():
     def on_message(client, userdata, msg):
         messagetime = int(round(time.time() * 1000))
         global mem
-        mem = memory.Memory(googleapikey)
+        mem = memory.Memory(google_api_key)
         payload = mem.verify(msg)
         if 'error' not in payload:
             if mem.geocode(payload):
@@ -45,8 +45,6 @@ def main():
                 esnode.index(index=payload["meta.devID"], doc_type="location_data", body=payload)
 
         print(str(payload))
-
-
 
     client = mqtt.Client('ec2instance', clean_session=False, userdata='ec2instance')
     client.on_connect = on_connect
