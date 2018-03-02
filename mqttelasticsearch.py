@@ -12,46 +12,33 @@ def main():
     google_api_key = keys.readline().replace('\n', '')
     keys.close()
 
-
-
     region = "us-east-1"
     service = "es"
     aws_auth = AWS4Auth(aws_key, aws_secret, region, service)
 
-    endpoint = "search-chriswillelasticsearch-sbzs5dhk3efss3t4bidlxmym7u.us-east-1.es.amazonaws.com"
-    esnode = Elasticsearch(
-        hosts = [{'host': endpoint, 'port': 443}],
-        http_auth = aws_auth,
-        use_ssl = True,
-        verify_certs = True,
-        connection_class = RequestsHttpConnection
-    )
+    mem = memory.Memory(google_api_key, aws_auth)
+    try:
+        def on_connect(client, userdata, flags, rc):
+            print(str(userdata))
+            client.subscribe("gpsd_location")
+            print("Connected with result code: " + str(rc))
 
-    def on_connect(client, userdata, flags, rc):
-        print(str(userdata))
-        client.subscribe("gpsd_location")
-        print("Connected with result code: " + str(rc))
+        def on_message(client, userdata, msg):
+            messagetime = time.time()
+            payload = mem.verify(msg.payload)
+            if 'error' not in payload:
+                payload["meta.messageepoch"] = messagetime
+                mem.geocode(payload)
+            print(str(payload))
 
-    def on_message(client, userdata, msg):
-        messagetime = int(round(time.time() * 1000))
-        global mem
-        mem = memory.Memory(google_api_key)
-        payload = mem.verify(msg)
-        if 'error' not in payload:
-            if mem.geocode(payload):
-                mem.wait_for(payload)
-                esnode.index(index=payload["meta.devID"], doc_type="geocode_data", body=payload)
-            else:
-                esnode.index(index=payload["meta.devID"], doc_type="location_data", body=payload)
+        client = mqtt.Client('ec2instance', clean_session=False, userdata='ec2instance')
+        client.on_connect = on_connect
+        client.on_message = on_message
+        client.connect('127.0.0.1', 1883, 60)
 
-        print(str(payload))
-
-    client = mqtt.Client('ec2instance', clean_session=False, userdata='ec2instance')
-    client.on_connect = on_connect
-    client.on_message = on_message
-    client.connect('127.0.0.1', 1883, 60)
-
-    client.loop_forever()
+        client.loop_forever()
+    finally:
+        mem.stop_threads()
 
 
 if __name__ == '__main__':

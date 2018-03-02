@@ -43,12 +43,13 @@ if __name__ == '__main__':
         while True:
             try:
                 gpsdresp = gpsd.get_current()
-                devtime_millis = int(round(time.time() * 1000))
+                devtime_epoch = time.time()
                 dt = gpsdresp.get_time()
                 log.write("COLLECTED DATA::: gps location data")
 
                 if gpsdresp.lat != 0.0 and gpsdresp.lon != 0.0:
-                    payload = {"meta.deviceepoch": devtime_millis,
+                    payload = {"meta.deviceepoch": devtime_epoch,
+                               "meta.type": "location",
                                "meta.devID": "gpsd_cgood",
                                "error.climb": gpsdresp.error['c'],
                                "error.speed": gpsdresp.error['s'],
@@ -61,8 +62,7 @@ if __name__ == '__main__':
                                "pos.climb": gpsdresp.climb,
                                "pos.track": gpsdresp.track,
                                "pos.speed": gpsdresp.hspeed,
-                               "pos.precision": list(gpsdresp.position_precision()),
-                               "time.timezone": dt.tzname(),
+                               "time.timezone": "UTC",
                                "time.year": dt.year,
                                "time.month": dt.month,
                                "time.day": dt.day,
