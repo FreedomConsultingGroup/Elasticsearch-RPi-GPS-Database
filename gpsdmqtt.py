@@ -1,10 +1,13 @@
 #!/usr/bin/python3
 import paho.mqtt.client as mqtt
-import time, gpsd, re, subprocess
+import time, gpsd
 
 
 if __name__ == '__main__':
     log = open('/home/pi/Desktop/gpsdmqttlog.log', 'w')
+    usrfile = open("/home/pi/GPSDMQTT/usrfile.pswd")
+    usrnm = usrfile.readline().replace("\n", "")
+    passwd = usrfile.readline().replace("\n", "")
     try:
         log.write('----------LOG STARTED----------\n\n')
 
@@ -21,6 +24,7 @@ if __name__ == '__main__':
         log.write("CREATED METHOD::: on_message \n")
 
         client = mqtt.Client('cgood_bridge', clean_session=False, userdata='cgood_bridge')
+        client.username_pw_set(usrnm, passwd)
         connection_refused = True
         log.write("CREATED CLIENT::: client \n")
 
@@ -74,6 +78,7 @@ if __name__ == '__main__':
                     client.publish(topic='gpsd_location', payload=str(payload))
                 time.sleep(1)
             except UserWarning:
+                log.write("NO FIX::: gps might be in a bad location, try somewhere with an open area..\n")
                 time.sleep(1)
             except ConnectionError as err:
                 connection_refused = True

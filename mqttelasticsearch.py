@@ -1,15 +1,18 @@
 #!/usr/bin/python3
 from requests_aws4auth import AWS4Auth
-from elasticsearch import Elasticsearch, RequestsHttpConnection
 import paho.mqtt.client as mqtt
 import time, memory
 
 
 def main():
     keys = open("/home/ubuntu/chrisStuff/keys.txt", 'r')
+    usrfile = open("/home/ubuntu/chrisStuff/usrfile.pswd")
     aws_key = keys.readline().replace('\n', '')
     aws_secret = keys.readline().replace('\n', '')
     google_api_key = keys.readline().replace('\n', '')
+    usrnm = usrfile.readline().replace('\n', '')
+    passwd = usrfile.readline().replace('\n', '')
+    usrfile.close()
     keys.close()
 
     region = "us-east-1"
@@ -32,6 +35,7 @@ def main():
             print(str(payload))
 
         client = mqtt.Client('ec2instance', clean_session=False, userdata='ec2instance')
+        client.username_pw_set(usrnm, passwd)
         client.on_connect = on_connect
         client.on_message = on_message
         client.connect('127.0.0.1', 1883, 60)
