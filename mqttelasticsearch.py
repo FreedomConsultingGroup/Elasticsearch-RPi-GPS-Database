@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 from requests_aws4auth import AWS4Auth
-from elasticsearch import Elasticsearch, RequestsHttpConnection
 import paho.mqtt.client as mqtt
 import time, memory
 

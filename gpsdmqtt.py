@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import paho.mqtt.client as mqtt
-import time, gpsd, re, subprocess, ssl
+import time, gpsd
 
 
 if __name__ == '__main__':
