@@ -53,7 +53,11 @@ if __name__ == '__main__':
                     log.write("COLLECTED DATA::: gps location data")
 
                     if gpsdresp.lat != 0.0 and gpsdresp.lon != 0.0:
-                        payload = {"meta.deviceepoch": devtime_epoch,
+                        payload = {"loc": {
+                                       "lat": gpsdresp.lat,
+                                       "lon": gpsdresp.lon
+                                   },
+                                   "meta.deviceepoch": devtime_epoch,
                                    "meta.type": "location",
                                    "meta.devID": "gpsd_cgood",
                                    "error.climb": gpsdresp.error['c'],
@@ -61,8 +65,6 @@ if __name__ == '__main__':
                                    "error.altitude": gpsdresp.error['v'],
                                    "error.lat": gpsdresp.error['y'],
                                    "error.lon": gpsdresp.error['x'],
-                                   "loc.lat": gpsdresp.lat,
-                                   "loc.lon": gpsdresp.lon,
                                    "pos.alt": gpsdresp.alt,
                                    "pos.climb": gpsdresp.climb,
                                    "pos.track": gpsdresp.track,
