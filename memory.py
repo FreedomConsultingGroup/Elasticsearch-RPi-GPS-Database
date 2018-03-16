@@ -40,7 +40,7 @@ class Memory:
     """
     def __init__(self, api_key, aws_auth):
         self.first = MemoryBranch()
-        self.last_payload = {"loc.lat": 0.0, "loc.lon": 0.0, "meta.deviceepoch": time.time()}
+        self.last_payload = {"loc": {"lat": 0.0, "lon": 0.0}, "meta.deviceepoch": time.time()}
         self.decoder = json.JSONDecoder()
         self.upl_queue = queue.Queue()
         self.uploader = Uploader("Uploader", self.upl_queue, aws_auth)
@@ -128,10 +128,10 @@ class Memory:
         :param payload: payload to geocode
         :return: True if it's geocoding, false otherwise
         """
-        geo_hash, lat_error, lon_error = geohash.geohash(payload["loc.lat"], payload["loc.lon"], 35)
+        geo_hash, lat_error, lon_error = geohash.geohash(payload["loc"]["lat"], payload["loc"]["lon"], 35)
 
-        if abs(payload["loc.lat"] - self.last_payload["loc.lat"]) < 0.000450503 + lat_error and \
-                abs(payload["loc.lon"] - self.last_payload["loc.lon"]) < (0.000449152 * math.cos(math.radians(payload["loc.lat"]))) + lon_error:
+        if abs(payload["loc"]["lat"] - self.last_payload["loc"]["lat"]) < 0.000450503 + lat_error and \
+                abs(payload["loc"]["lon"] - self.last_payload["loc"]["lon"]) < (0.000449152 * math.cos(math.radians(payload["loc"]["lat"]))) + lon_error:
             if abs(payload["meta.deviceepoch"] - self.last_payload["meta.deviceepoch"]) > 180:
                 self.search_else_insert(geo_hash, payload)
                 self.last_payload = payload
