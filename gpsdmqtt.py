@@ -29,6 +29,7 @@ if __name__ == '__main__':
             connection_refused = True
             log.write("CREATED CLIENT::: client \n")
 
+
             while connection_refused:
                 try:
                     log.write("CONNECTING::: Attempting to connect to 34.197.13.189 \n")
