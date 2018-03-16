@@ -297,18 +297,15 @@ class Uploader(threading.Thread):
 
                 payload = self.upl_queue.get()
                 if payload["meta.type"] == "geocode":
-                    self.upload_geocode(payload)
+                    self.upload_location(payload)
                     es_log.write("sent geocode payload\n")
                 else:
                     self.upload_location(payload)
                     es_log.write("sent location payload\n")
         except:
-            print("Unknown error in uploader: " + str(sys.exc_info()))
+            es_log.write("Unknown error in uploader: " + str(sys.exc_info()) + "\n")
         finally:
             es_log.close()
-
-    def upload_geocode(self, payload):
-        self.esnode.index(index=payload["meta.devID"], doc_type="geocode_data", body=payload)
 
     def upload_location(self, payload):
         self.esnode.index(index=payload["meta.devID"], doc_type="location_data", body=payload)
