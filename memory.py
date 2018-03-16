@@ -268,6 +268,7 @@ class Geocoder(threading.Thread):
         """
         self.__stop = True
 
+
 class Uploader(threading.Thread):
     def __init__(self, name, upl_queue, aws_auth):
         threading.Thread.__init__(self, name=name)
