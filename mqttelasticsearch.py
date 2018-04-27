@@ -5,8 +5,8 @@ import time, memory
 
 
 def main():
-    keys = open("/home/ubuntu/chrisStuff/keys.txt", 'r')
-    usrfile = open("/home/ubuntu/chrisStuff/usrfile.pswd")
+    keys = open("/home/ubuntu/keys/api-keys.txt", 'r')
+    usrfile = open("/home/ubuntu/keys/usrfile.pswd")
     aws_key = keys.readline().replace('\n', '')
     aws_secret = keys.readline().replace('\n', '')
     google_api_key = keys.readline().replace('\n', '')
