@@ -286,7 +286,7 @@ class Uploader(threading.Thread):
         self.upl_queue = upl_queue
 
     def run(self):
-        es_log = open("/home/ubuntu/chrisStuff/es_log.txt", "w")
+        es_log = open("/home/ubuntu/FILES/es_log.log", "w")
         try:
             while 1:
                 if self.__stop:
