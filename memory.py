@@ -293,7 +293,7 @@ class Uploader(threading.Thread):
                     exit(0)
                 if self.upl_queue.empty():
                     es_log.write("queue empty\n")
-                    time.sleep(0.01)
+                    time.sleep(1)
                     continue
 
                 payload = self.upl_queue.get()
