@@ -258,8 +258,8 @@ class Geocoder(threading.Thread):
                 for dictn in location['address_components']:
                     payload['geo.'+dictn['types'][0]] = dictn['long_name']
                 self.upl_queue.put(payload)
-        except:
-            print("Unknown error in geocoder: " + str(sys.exc_info()))
+        except Exception as e:
+            print("Unknown error in geocoder: " + str(e))
 
     def stop_thread(self):
         """
