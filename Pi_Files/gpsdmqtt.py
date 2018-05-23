@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 import paho.mqtt.client as mqtt
-import time, gpsd
+import time, gpsd, zlib, os
 
 
 if __name__ == '__main__':
     while True:
-        log = open('/home/pi/Desktop/gpsdmqttlog.log', 'w')
+        log = open('/home/pi/GPSDMQTT/gpsdmqttlog.log', 'w')
         try:
             usrfile = open("/home/pi/GPSDMQTT/usrfile.pswd")
             usrnm = usrfile.readline().replace("\n", "")
@@ -31,8 +31,8 @@ if __name__ == '__main__':
 
             while connection_refused:
                 try:
-                    log.write("CONNECTING::: Attempting to connect to 34.197.13.189 \n")
-                    client.connect('34.197.13.189', 1883, 60)
+                    log.write("CONNECTING::: Attempting to connect to cgood.fcgit.net \n")
+                    client.connect('cgood.fcgit.net', 1883, 60)
                     connection_refused = False
                 except ConnectionRefusedError:
                     log.write("CONNECTION REFUSED ERROR::: Connection refused, retrying... \n")
@@ -77,7 +77,7 @@ if __name__ == '__main__':
                                    "time.minute": dt.minute,
                                    "time.second": dt.second,
                                    "time.microsecond": dt.microsecond}
-                        log.write('SENT MESSAGE::: ' + str(payload) + '\n\n')
+                        log.write('SENT MESSAGE::: ' + gpsdresp.lat + ", " + gpsdresp.lon + "Time: " + devtime_epoch + '\n\n')
                         client.publish(topic='gpsd_location', payload=str(payload))
                     time.sleep(1)
                 except gpsd.NoFixError:
@@ -101,3 +101,7 @@ if __name__ == '__main__':
             time.sleep(1)
         finally:
             log.close()
+            # logz = open('/home/pi/GPSDMQTT/gpsdmqttlog.log_' + str(int(time.time())) + '.gz', 'w')
+            # logz.write(zlib.compress(open('/home/pi/GPSDMQTT/gpsdmqttlog.log', 'r').read(), 5))
+            # logz.close()
+            # os.remove('/home/pi/GPSDMQTT/gpsdmqttlog.log')
