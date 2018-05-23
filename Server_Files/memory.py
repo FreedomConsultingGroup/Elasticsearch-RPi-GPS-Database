@@ -252,6 +252,7 @@ class Geocoder(threading.Thread):
                 payload = self.geo_queue.get()
                 response = requests.get("https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
                                     str(payload["loc"]["lat"]) + ',' + str(payload["loc"]["lon"]) + "&key=" + self.api_key)
+                print(response.json())
                 location = response.json()['results'][0]
 
                 payload["meta.type"] = "geocode"
