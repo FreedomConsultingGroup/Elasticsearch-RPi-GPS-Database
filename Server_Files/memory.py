@@ -252,7 +252,7 @@ class Geocoder(threading.Thread):
                 payload = self.geo_queue.get()
                 response = requests.get("https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
                                     str(payload["loc"]["lat"]) + ',' + str(payload["loc"]["lon"]) + "&key=" + self.api_key)
-                print(response.json())
+                # print(response.json())
                 location = response.json()['results'][0]
 
                 payload["meta.type"] = "geocode"
@@ -260,7 +260,8 @@ class Geocoder(threading.Thread):
                     payload['geo.'+dictn['types'][0]] = dictn['long_name']
                 self.upl_queue.put(payload)
         except Exception as e:
-            print("Unknown error in geocoder: " + str(e))
+            # print("Unknown error in geocoder: " + str(e))
+            pass
 
     def stop_thread(self):
         """
