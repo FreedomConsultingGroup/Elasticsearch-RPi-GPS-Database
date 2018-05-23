@@ -32,7 +32,6 @@ def main():
             if 'error' not in payload:
                 payload["meta.messageepoch"] = messagetime
                 mem.geocode(payload)
-            print(str(payload))
 
         client = mqtt.Client('ec2instance', clean_session=False, userdata='ec2instance')
         client.username_pw_set(usrnm, passwd)
