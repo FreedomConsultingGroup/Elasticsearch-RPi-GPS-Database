@@ -42,6 +42,7 @@ class Memory:
         self.first = MemoryBranch()
         self.last_payload = {"loc": {"lat": 0.0, "lon": 0.0}, "meta.deviceepoch": time.time()}
         self.decoder = json.JSONDecoder()
+        self.weight = 0
         self.upl_queue = queue.Queue()
         self.uploader = Uploader("Uploader", self.upl_queue, aws_auth)
         self.uploader.start()
@@ -125,6 +126,8 @@ class Memory:
         have been in that location for more than 3 minutes. If they have not, it does nothing. If they have, it runs
         search_else_insert() on the payload.
 
+        After that,
+
         :param payload: payload to geocode
         :return: True if it's geocoding, false otherwise
         """
@@ -136,12 +139,14 @@ class Memory:
                 self.search_else_insert(geo_hash, payload)
                 self.last_payload = payload
                 return True
+        if payload["pos.speed"] > 1:
+            payload['meta.weight'] = self.weight
+            self.weight = 0
             self.upl_queue.put(payload)
-            return False
         else:
-            self.upl_queue.put(payload)
-            self.last_payload = payload
-            return False
+            self.weight += 0.0167
+        self.last_payload = payload
+        return False
 
     def join(self):
         """
@@ -252,7 +257,6 @@ class Geocoder(threading.Thread):
                 payload = self.geo_queue.get()
                 response = requests.get("https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
                                     str(payload["loc"]["lat"]) + ',' + str(payload["loc"]["lon"]) + "&key=" + self.api_key)
-                # print(response.json())
                 location = response.json()['results'][0]
 
                 payload["meta.type"] = "geocode"
@@ -304,9 +308,8 @@ class Uploader(threading.Thread):
                     es_log.write("sent geocode payload\n")
                 else:
                     self.upload_location(payload)
-                    es_log.write("sent location payload\n")
         except:
-            es_log.write("Unknown error in uploader: " + str(sys.exc_info()) + "\n")
+            es_log.write("Error in uploader: " + str(sys.exc_info()) + "\n")
         finally:
             es_log.close()
 

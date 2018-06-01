@@ -60,6 +60,7 @@ if __name__ == '__main__':
                                    "meta.deviceepoch": devtime_epoch,
                                    "meta.type": "location",
                                    "meta.devID": "gpsd_cgood",
+                                   "meta.weight": 0,
                                    "error.climb": gpsdresp.error['c'],
                                    "error.speed": gpsdresp.error['s'],
                                    "error.altitude": gpsdresp.error['v'],
@@ -77,21 +78,21 @@ if __name__ == '__main__':
                                    "time.minute": dt.minute,
                                    "time.second": dt.second,
                                    "time.microsecond": dt.microsecond}
-                        log.write('SENT MESSAGE::: ' + gpsdresp.lat + ", " + gpsdresp.lon + "Time: " + devtime_epoch + '\n\n')
+                        log.write('SENT MESSAGE::: Time: ' + devtime_epoch + '\n\n')
                         client.publish(topic='gpsd_location', payload=str(payload))
                     time.sleep(1)
                 except gpsd.NoFixError:
                     log.write("NO FIX ERROR::: gps might be in a bad location, try somewhere with an open area..\n")
                     time.sleep(1)
                 except UserWarning:
-                    log.write("NO FIX::: gps might be in a bad location, try somewhere with an open area..\n")
+                    log.write("NO FIX::: gps not found in expected socket file /dev/tty/ACM0. Make sure the device is plugged in..\n")
                     time.sleep(1)
                 except ConnectionError as err:
                     connection_refused = True
                     while connection_refused:
                         try:
                             log.write("ERROR::: " + str(err) + "\n")
-                            log.write("CONNECTING::: Attempting to connect to 34.197.13.189 \n")
+                            log.write("CONNECTING::: Attempting to connect to cgood.fcgit.net \n")
                             client.connect('34.197.13.189', 1883, 60)
                             connection_refused = False
                         except ConnectionRefusedError:
