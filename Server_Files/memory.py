@@ -278,6 +278,7 @@ class Geocoder(threading.Thread):
                         payload['loc.lon'] = location['lng']
                         payload['error.lat'] = error
                         payload['error.lon'] = error
+                        # TODO maybe find a way to get some rough estimation of speed
                     else:
                         response.raise_for_status()
 
