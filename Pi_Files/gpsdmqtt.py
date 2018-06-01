@@ -7,7 +7,7 @@ import datetime
 
 if __name__ == '__main__':
     while True:
-        log = open('/home/pi/GPSDMQTT/gpsdmqttlog.log', 'w')
+        log = open('/home/pi/GPSDMQTT/gpsdmqttlog.log', 'a')
         try:
             wifipoints = wifi.Wifi()
             usrfile = open("/home/pi/GPSDMQTT/usrfile.pswd")
@@ -53,7 +53,7 @@ if __name__ == '__main__':
                     gpsdresp = gpsd.get_current()
                     devtime_epoch = time.time()
                     dt = gpsdresp.get_time()
-                    log.write("COLLECTED DATA::: gps location data")
+                    log.write("COLLECTED DATA::: gps location data\n")
 
                     if gpsdresp.lat != 0.0 and gpsdresp.lon != 0.0:
                         payload = {"loc": {
