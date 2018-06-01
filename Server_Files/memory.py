@@ -275,7 +275,7 @@ class Geocoder(threading.Thread):
                         error = responsejson['accuracy']
                         del payload["wifiAccessPoints"]
                         payload['loc.lat'] = location['lat']
-                        payload['loc.lon'] = location['lon']
+                        payload['loc.lon'] = location['lng']
                         payload['error.lat'] = error
                         payload['error.lon'] = error
                     else:
