@@ -5,9 +5,9 @@ import math
 import queue
 import threading
 import time
-import geohash
 import requests
 from elasticsearch import Elasticsearch, RequestsHttpConnection
+from . import geohash
 
 
 class Memory:
@@ -139,7 +139,7 @@ class Memory:
                 self.search_else_insert(geo_hash, payload)
                 self.last_payload = payload
                 return True
-        if payload["pos.speed"] > 1:
+        if payload["pos.speed"] > 2:
             payload['meta.weight'] = self.weight
             self.weight = 0
             self.upl_queue.put(payload)
@@ -147,6 +147,9 @@ class Memory:
             self.weight += 0.0167
         self.last_payload = payload
         return False
+
+    def geolocate(self, payload: dict):
+        self.geo_queue.put(payload)
 
     def join(self):
         """
@@ -246,26 +249,42 @@ class Geocoder(threading.Thread):
         self.api_key = api_key
 
     def run(self):
-        try:
-            while 1:
+        while 1:
+            try:
                 if self.__stop:
                     exit(0)
                 if self.geo_queue.empty():
                     time.sleep(0.01)
                     continue
-
                 payload = self.geo_queue.get()
-                response = requests.get("https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
-                                    str(payload["loc"]["lat"]) + ',' + str(payload["loc"]["lon"]) + "&key=" + self.api_key)
-                location = response.json()['results'][0]
+                if payload["meta.type"] == "location":
+                    response = requests.get("https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
+                                        str(payload["loc"]["lat"]) + ',' + str(payload["loc"]["lon"]) + "&key=" + self.api_key)
+                    location = response.json()['results'][0]
 
-                payload["meta.type"] = "geocode"
-                for dictn in location['address_components']:
-                    payload['geo.'+dictn['types'][0]] = dictn['long_name']
+                    payload["meta.type"] = "geocode"
+                    for dictn in location['address_components']:
+                        payload['geo.'+dictn['types'][0]] = dictn['long_name']
+                elif payload["meta.type"] == "wifilocation":
+                    jsonpayload = {"wifiAccessPoints": payload["wifiAccessPoints"]}
+                    response = requests.post(url="https://www.googleapis.com/geolocation/v1/geolocate?key=" + self.api_key,
+                                            json=jsonpayload)
+                    if response.status_code == 200:
+                        responsejson = response.json()
+                        location = responsejson['location']
+                        error = responsejson['accuracy']
+                        del payload["wifiAccessPoints"]
+                        payload['loc.lat'] = location['lat']
+                        payload['loc.lon'] = location['lon']
+                        payload['error.lat'] = error
+                        payload['error.lon'] = error
+                    else:
+                        response.raise_for_status()
+
                 self.upl_queue.put(payload)
-        except Exception as e:
-            # print("Unknown error in geocoder: " + str(e))
-            pass
+            except Exception as e:
+                # print("Unknown error in geocoder: " + str(e))
+                pass
 
     def stop_thread(self):
         """

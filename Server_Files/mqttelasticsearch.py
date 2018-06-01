@@ -29,7 +29,10 @@ def main():
         def on_message(client, userdata, msg):
             messagetime = time.time()
             payload = mem.verify(msg.payload)
-            if 'error' not in payload:
+            if 'wifiAccessPoints' in payload:
+                payload["meta.messageepoch"] = messagetime
+                mem.geolocate(payload)
+            elif 'error' not in payload:
                 payload["meta.messageepoch"] = messagetime
                 mem.geocode(payload)
 

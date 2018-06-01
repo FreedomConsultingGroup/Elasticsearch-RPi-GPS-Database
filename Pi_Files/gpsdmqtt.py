@@ -1,12 +1,15 @@
 #!/usr/bin/python3
 import paho.mqtt.client as mqtt
-import time, gpsd, zlib, os
+import time, gpsd, sys
+from . import wifi
+import datetime
 
 
 if __name__ == '__main__':
     while True:
         log = open('/home/pi/GPSDMQTT/gpsdmqttlog.log', 'w')
         try:
+            wifipoints = wifi.Wifi()
             usrfile = open("/home/pi/GPSDMQTT/usrfile.pswd")
             usrnm = usrfile.readline().replace("\n", "")
             passwd = usrfile.readline().replace("\n", "")
@@ -76,17 +79,34 @@ if __name__ == '__main__':
                                    "time.day": dt.day,
                                    "time.hour": dt.hour,
                                    "time.minute": dt.minute,
-                                   "time.second": dt.second,
-                                   "time.microsecond": dt.microsecond}
-                        log.write('SENT MESSAGE::: Time: ' + devtime_epoch + '\n\n')
+                                   "time.second": dt.second}
+                        log.write('SENT GPS MESSAGE::: Time: ' + devtime_epoch + '\n')
                         client.publish(topic='gpsd_location', payload=str(payload))
                     time.sleep(1)
-                except gpsd.NoFixError:
-                    log.write("NO FIX ERROR::: gps might be in a bad location, try somewhere with an open area..\n")
-                    time.sleep(1)
-                except UserWarning:
-                    log.write("NO FIX::: gps not found in expected socket file /dev/tty/ACM0. Make sure the device is plugged in..\n")
-                    time.sleep(1)
+                except gpsd.NoFixError or UserWarning:
+                    try:
+                        log.write("NO FIX ERROR::: gps might be in a bad location, or is not plugged in..\n")
+                        wifiaccesspoints = wifipoints.get_cells()
+                        devtime_epoch = time.time()
+                        dt = datetime.datetime.utcnow()
+                        payload = {
+                            "wifiAccessPoints": wifiaccesspoints,
+                            "meta.deviceepoch": devtime_epoch,
+                            "meta.type": "wifilocation",
+                            "meta.devID": "gpsd_cgood",
+                            "meta.weight": 0,
+                            "time.timezone": "UTC",
+                            "time.year": dt.year,
+                            "time.month": dt.month,
+                            "time.day": dt.day,
+                            "time.hour": dt.hour,
+                            "time.minute": dt.minute,
+                            "time.second": dt.second}
+                        log.write('SENT WIFI MESSAGE::: Time: ' + devtime_epoch + '\n')
+                    except Exception as e:
+                        log.write("ERROR::: error getting wifi data: " + str(sys.exc_info()))
+                    finally:
+                        time.sleep(10)
                 except ConnectionError as err:
                     connection_refused = True
                     while connection_refused:
