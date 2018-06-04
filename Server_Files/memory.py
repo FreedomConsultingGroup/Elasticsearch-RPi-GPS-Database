@@ -194,15 +194,15 @@ class Memory:
         """
         while not self.geo_queue.empty():
             time.sleep(0.1)
-        self.geocoder.stop_thread()
+        self.geocoder.__stop = True
 
         while not self.upl_queue.empty():
             time.sleep(0.1)
-        self.uploader.stop_thread()
+        self.uploader.__stop = True
 
         while not self.log_queue.empty():
             time.sleep(0.1)
-        self.log.stop_thread()
+        self.log.__stop = True
 
 
 class MemoryNode:
@@ -322,6 +322,7 @@ class Geolocator(threading.Thread):
                 if self.__stop:
                     exit(0)
                 elif self.glo_queue.empty():
+                    print("empty")
                     time.sleep(1)
                     continue
                 payload = self.glo_queue.get()
