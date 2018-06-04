@@ -59,6 +59,7 @@ class Memory:
         self.glo_queue = queue.Queue()
         self.geolocator = Geolocator(self, self.glo_queue, api_key, self.log_queue)
         self.geolocator.start()
+        print("started geolocator")
 
     def verify(self, msg_payload) -> dict:
         """
@@ -278,7 +279,7 @@ class Geocoder(threading.Thread):
         while 1:
             try:
                 if self.__stop:
-                    exit(0)
+                    return 0
                 if self.geo_queue.empty():
                     time.sleep(0.01)
                     continue
@@ -318,11 +319,11 @@ class Geolocator(threading.Thread):
 
     def run(self):
         while 1:
+            print("started")
             try:
                 if self.__stop:
-                    exit(0)
+                    return 0
                 elif self.glo_queue.empty():
-                    print("empty")
                     time.sleep(1)
                     continue
                 payload = self.glo_queue.get()
@@ -379,7 +380,7 @@ class Uploader(threading.Thread):
         while 1:
             try:
                 if self.__stop:
-                    exit(0)
+                    return 0
                 if self.upl_queue.empty():
                     time.sleep(1)
                     continue
@@ -423,7 +424,7 @@ class Log(threading.Thread):
         while 1:
             try:
                 if self.__stop:
-                    exit(0)
+                    return 0
                 if self.log_queue.empty():
                     time.sleep(0.1)
 
