@@ -21,7 +21,6 @@ def main():
     aws_auth = AWS4Auth(aws_key, aws_secret, region, service)
 
     mem = memory.Memory(google_api_key, aws_auth)
-    print("created memory")
     try:
         def on_connect(client, userdata, flags, rc):
             print(str(userdata))
@@ -33,7 +32,6 @@ def main():
             payload = mem.verify(msg.payload)
             if payload["meta.type"] == "wifilocation":
                 payload["meta.messageepoch"] = messagetime
-                print(payload['wifiAccessPoints'], '\n')
                 mem.geolocate(payload)
             elif 'error' not in payload:
                 payload["meta.messageepoch"] = messagetime

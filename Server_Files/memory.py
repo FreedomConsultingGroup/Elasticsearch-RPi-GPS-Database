@@ -103,8 +103,6 @@ class Memory:
         :param payload: payload to geocode
         :return: True if it's geocoding, false otherwise
         """
-        if payload["meta.type"] == "wifilocation":
-            print(payload)
         geo_hash, lat_error, lon_error = geohash.geohash(payload["loc"]["lat"], payload["loc"]["lon"], 35)
 
         if abs(payload["loc"]["lat"] - self.last_payload["loc"]["lat"]) < 0.000450503 + lat_error and \
@@ -325,12 +323,9 @@ class Geolocator(threading.Thread):
                     time.sleep(1)
                     continue
                 payload = self.glo_queue.get()
-                print("found thing")
                 jsonpayload = {"wifiAccessPoints": payload["wifiAccessPoints"], }
                 response = requests.post(url="https://www.googleapis.com/geolocation/v1/geolocate?key=" + self.api_key,
                                          json=jsonpayload)
-                print(response.status_code)
-                print(response.json())
                 if response.status_code == 200:
                     responsejson = response.json()
                     location = responsejson['location']
