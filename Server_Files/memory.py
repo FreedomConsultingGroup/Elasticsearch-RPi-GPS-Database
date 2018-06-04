@@ -57,7 +57,7 @@ class Memory:
         self.geocoder.start()
 
         self.glo_queue = queue.Queue()
-        self.geolocator = Geolocator(self, self.glo_queue, self.log_queue, api_key)
+        self.geolocator = Geolocator(self, self.glo_queue, api_key, self.log_queue)
         self.geolocator.start()
 
     def verify(self, msg_payload) -> dict:
@@ -326,7 +326,7 @@ class Geolocator(threading.Thread):
                     continue
                 payload = self.glo_queue.get()
                 print("found thing")
-                jsonpayload = {"wifiAccessPoints": payload["wifiAccessPoints"]}
+                jsonpayload = {"wifiAccessPoints": payload["wifiAccessPoints"], }
                 response = requests.post(url="https://www.googleapis.com/geolocation/v1/geolocate?key=" + self.api_key,
                                          json=jsonpayload)
                 print(response.status_code)
