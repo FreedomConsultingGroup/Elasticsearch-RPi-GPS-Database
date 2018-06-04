@@ -2,7 +2,7 @@
 from requests_aws4auth import AWS4Auth
 import paho.mqtt.client as mqtt
 import time
-from . import memory
+from Server_Files import memory
 
 
 def main():
