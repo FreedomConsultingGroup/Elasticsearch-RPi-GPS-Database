@@ -331,8 +331,7 @@ class Geolocator(threading.Thread):
                     location = responsejson['location']
                     error = responsejson['accuracy']
                     del payload["wifiAccessPoints"]
-                    payload['loc.lat'] = location['lat']
-                    payload['loc.lon'] = location['lng']
+                    payload['loc'] = {'lat': location['lat'], 'lon': location['lng']}
                     payload['error.lat'] = error
                     payload['error.lon'] = error
                     # TODO Find a way to get some rough estimation of speed
