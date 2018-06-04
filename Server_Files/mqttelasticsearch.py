@@ -21,6 +21,7 @@ def main():
     aws_auth = AWS4Auth(aws_key, aws_secret, region, service)
 
     mem = memory.Memory(google_api_key, aws_auth)
+    print("created memory")
     try:
         def on_connect(client, userdata, flags, rc):
             print(str(userdata))
