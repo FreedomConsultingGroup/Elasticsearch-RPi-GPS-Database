@@ -7,7 +7,7 @@ import threading
 import time
 import requests
 from elasticsearch import Elasticsearch, RequestsHttpConnection
-from Server_Files import geohash
+import geohash
 
 
 class Memory:
