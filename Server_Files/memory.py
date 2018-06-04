@@ -57,7 +57,7 @@ class Memory:
         self.geocoder.start()
 
         self.glo_queue = queue.Queue()
-        self.geolocator = Geolocator(self, self.glo_queue, api_key, self.log_queue)
+        self.geolocator = Geolocator(self, api_key, self.glo_queue, self.log_queue)
         self.geolocator.start()
 
     def verify(self, msg_payload) -> dict:
@@ -308,7 +308,7 @@ class Geocoder(threading.Thread):
 
 
 class Geolocator(threading.Thread):
-    def __init__(self, memory, api_key, glo_queue, log_queue):
+    def __init__(self, memory, api_key, glo_queue: queue.Queue, log_queue: queue.Queue):
         threading.Thread.__init__(self, name="Geolocator")
         self.memory = memory
         self.glo_queue = glo_queue
@@ -318,7 +318,6 @@ class Geolocator(threading.Thread):
 
     def run(self):
         while 1:
-            print("started")
             try:
                 if self.__stop:
                     return 0
@@ -428,7 +427,7 @@ class Log(threading.Thread):
                     time.sleep(0.1)
 
                 payload = self.log_queue.get()
-                self.log.write(str(time.time()) + " - " + payload[0] + ":   " + payload[1])
+                self.log.write(str(time.time()) + " - " + payload[0] + ":   " + payload[1] + '\n')
             except KeyboardInterrupt:
                 self.log.close()
                 exit(0)
