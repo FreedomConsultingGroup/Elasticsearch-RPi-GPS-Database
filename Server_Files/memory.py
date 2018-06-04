@@ -46,6 +46,7 @@ class Memory:
 
         self.log_queue = queue.Queue()
         self.log = Log(self.log_queue)
+        self.log.start()
 
         self.upl_queue = queue.Queue()
         self.uploader = Uploader("Uploader", self.upl_queue, aws_auth, self.log_queue)
@@ -57,6 +58,7 @@ class Memory:
 
         self.glo_queue = queue.Queue()
         self.geolocator = Geolocator(self, self.glo_queue, self.log_queue, api_key)
+        self.geolocator.start()
 
     def verify(self, msg_payload) -> dict:
         """
