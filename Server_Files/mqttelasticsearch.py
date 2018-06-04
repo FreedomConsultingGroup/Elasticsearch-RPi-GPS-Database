@@ -31,7 +31,8 @@ def main():
             payload = mem.verify(msg.payload)
             if 'wifiAccessPoints' in payload:
                 payload["meta.messageepoch"] = messagetime
-                mem.geolocate(payload)
+                print(payload)
+                # mem.geolocate(payload)
             elif 'error' not in payload:
                 payload["meta.messageepoch"] = messagetime
                 mem.geocode(payload)

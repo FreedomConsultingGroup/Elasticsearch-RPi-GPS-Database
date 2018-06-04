@@ -2,6 +2,7 @@ import subprocess
 import json
 import re
 
+
 def pass_braces(text):
     i = 0
     while text[i] != '{':
