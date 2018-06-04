@@ -323,9 +323,12 @@ class Geolocator(threading.Thread):
                     time.sleep(1)
                     continue
                 payload = self.glo_queue.get()
+                print("found thing")
                 jsonpayload = {"wifiAccessPoints": payload["wifiAccessPoints"]}
                 response = requests.post(url="https://www.googleapis.com/geolocation/v1/geolocate?key=" + self.api_key,
                                          json=jsonpayload)
+                print(response.status_code)
+                print(response.json())
                 if response.status_code == 200:
                     responsejson = response.json()
                     location = responsejson['location']
