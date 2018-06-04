@@ -59,7 +59,6 @@ class Memory:
         self.glo_queue = queue.Queue()
         self.geolocator = Geolocator(self, self.glo_queue, api_key, self.log_queue)
         self.geolocator.start()
-        print("started geolocator")
 
     def verify(self, msg_payload) -> dict:
         """

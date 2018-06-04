@@ -45,7 +45,7 @@ def main():
         client.on_message = on_message
         client.connect('127.0.0.1', 1883, 60)
 
-        client.loop_forever()
+        client.loop_start()
     finally:
         mem.stop_threads()
 
