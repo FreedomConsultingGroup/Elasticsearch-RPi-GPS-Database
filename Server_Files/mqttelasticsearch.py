@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 from requests_aws4auth import AWS4Auth
 import paho.mqtt.client as mqtt
-import time, memory
+import time
+from . import memory
 
 
 def main():
