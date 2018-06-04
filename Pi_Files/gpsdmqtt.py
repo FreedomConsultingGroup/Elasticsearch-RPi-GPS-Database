@@ -83,7 +83,7 @@ if __name__ == '__main__':
                         log.write('SENT GPS MESSAGE::: Time: ' + devtime_epoch + '\n')
                         client.publish(topic='gpsd_location', payload=str(payload))
                     time.sleep(1)
-                except gpsd.NoFixError or UserWarning:
+                except (gpsd.NoFixError, UserWarning):
                     try:
                         log.write("NO FIX ERROR::: gps might be in a bad location, or is not plugged in..\n")
                         wifiaccesspoints = wifipoints.get_cells()
@@ -106,6 +106,7 @@ if __name__ == '__main__':
                     except Exception as e:
                         log.write("ERROR::: error getting wifi data: " + str(sys.exc_info()))
                     finally:
+                        client.publish(topic='gpsd_location', payload=str(payload))
                         time.sleep(10)
                 except ConnectionError as err:
                     connection_refused = True
@@ -120,8 +121,7 @@ if __name__ == '__main__':
                             time.sleep(1)
         except OSError:
             time.sleep(1)
-        finally:
-            log.close()
+        # finally:
             # logz = open('/home/pi/GPSDMQTT/gpsdmqttlog.log_' + str(int(time.time())) + '.gz', 'w')
             # logz.write(zlib.compress(open('/home/pi/GPSDMQTT/gpsdmqttlog.log', 'r').read(), 5))
             # logz.close()

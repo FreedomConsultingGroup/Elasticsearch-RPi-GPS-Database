@@ -55,6 +55,9 @@ class Memory:
         self.geocoder = Geocoder("Geocoder", self.geo_queue, self.upl_queue, api_key, self.log_queue)
         self.geocoder.start()
 
+        self.glo_queue = queue.Queue()
+        self.geolocator = Geolocator(self, self.glo_queue, self.log_queue, api_key)
+
     def verify(self, msg_payload) -> dict:
         """
         The first method called by outside functions. Makes sure there are no errors in parsing JSON.
@@ -80,7 +83,7 @@ class Memory:
         :param payload: payload containing metadata and all nearby wifi points
         :return: None
         """
-        self.geo_queue.put(payload)
+        self.glo_queue.put(payload)
 
     def geocode(self, payload: dict) -> bool:
         """
@@ -98,6 +101,8 @@ class Memory:
         :param payload: payload to geocode
         :return: True if it's geocoding, false otherwise
         """
+        if payload["meta.type"] == "wifilocation":
+            print(payload)
         geo_hash, lat_error, lon_error = geohash.geohash(payload["loc"]["lat"], payload["loc"]["lon"], 35)
 
         if abs(payload["loc"]["lat"] - self.last_payload["loc"]["lat"]) < 0.000450503 + lat_error and \
@@ -276,32 +281,64 @@ class Geocoder(threading.Thread):
                     time.sleep(0.01)
                     continue
                 payload = self.geo_queue.get()
-                if payload["meta.type"] == "location":
-                    response = requests.get("https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
-                                        str(payload["loc"]["lat"]) + ',' + str(payload["loc"]["lon"]) + "&key=" + self.api_key)
-                    location = response.json()['results'][0]
+                response = requests.get("https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
+                                    str(payload["loc"]["lat"]) + ',' + str(payload["loc"]["lon"]) + "&key=" + self.api_key)
+                location = response.json()['results'][0]
 
-                    payload["meta.type"] = "geocode"
-                    for dictn in location['address_components']:
-                        payload['geo.'+dictn['types'][0]] = dictn['long_name']
-                elif payload["meta.type"] == "wifilocation":
-                    jsonpayload = {"wifiAccessPoints": payload["wifiAccessPoints"]}
-                    response = requests.post(url="https://www.googleapis.com/geolocation/v1/geolocate?key=" + self.api_key,
-                                            json=jsonpayload)
-                    if response.status_code == 200:
-                        responsejson = response.json()
-                        location = responsejson['location']
-                        error = responsejson['accuracy']
-                        del payload["wifiAccessPoints"]
-                        payload['loc.lat'] = location['lat']
-                        payload['loc.lon'] = location['lng']
-                        payload['error.lat'] = error
-                        payload['error.lon'] = error
-                        # TODO Find a way to get some rough estimation of speed
-                    else:
-                        response.raise_for_status()
+                payload["meta.type"] = "geocode"
+                for dictn in location['address_components']:
+                    payload['geo.'+dictn['types'][0]] = dictn['long_name']
+
 
                 self.upl_queue.put(payload)
+            except KeyboardInterrupt:
+                exit(0)
+            except:
+                self.log_queue.put(("Geocoder", "Error: " + str(sys.exc_info())))
+                continue
+
+    def stop_thread(self):
+        """
+        Should not be called unless self.queue is empty
+        :return: None
+        """
+        self.__stop = True
+
+
+class Geolocator(threading.Thread):
+    def __init__(self, memory, api_key, glo_queue, log_queue):
+        threading.Thread.__init__(self, name="Geolocator")
+        self.memory = memory
+        self.glo_queue = glo_queue
+        self.log_queue = log_queue
+        self.api_key = api_key
+        self.__stop = False
+
+    def run(self):
+        while 1:
+            try:
+                if self.__stop:
+                    exit(0)
+                elif self.glo_queue.empty():
+                    time.sleep(1)
+                    continue
+                payload = self.glo_queue.get()
+                jsonpayload = {"wifiAccessPoints": payload["wifiAccessPoints"]}
+                response = requests.post(url="https://www.googleapis.com/geolocation/v1/geolocate?key=" + self.api_key,
+                                         json=jsonpayload)
+                if response.status_code == 200:
+                    responsejson = response.json()
+                    location = responsejson['location']
+                    error = responsejson['accuracy']
+                    del payload["wifiAccessPoints"]
+                    payload['loc.lat'] = location['lat']
+                    payload['loc.lon'] = location['lng']
+                    payload['error.lat'] = error
+                    payload['error.lon'] = error
+                    # TODO Find a way to get some rough estimation of speed
+                    self.memory.geocode(payload)
+                else:
+                    response.raise_for_status()
             except KeyboardInterrupt:
                 exit(0)
             except:
