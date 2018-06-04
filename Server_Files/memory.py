@@ -342,7 +342,7 @@ class Geolocator(threading.Thread):
             except KeyboardInterrupt:
                 exit(0)
             except:
-                self.log_queue.put(("Geocoder", "Error: " + str(sys.exc_info())))
+                self.log_queue.put(("Geolocator", "Error: " + str(sys.exc_info())))
                 continue
 
     def stop_thread(self):
