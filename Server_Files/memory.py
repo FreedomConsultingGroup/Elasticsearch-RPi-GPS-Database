@@ -35,7 +35,7 @@ class Memory:
     """
     def __init__(self, api_key, aws_auth):
         self.first = MemoryBranch()
-        self.last_payload = {"loc": {"lat": 0.0, "lon": 0.0}, "meta.deviceepoch": time.time()}
+        self.last_payload = {"loc": {"lat": 0.0, "lon": 0.0}, "meta.deviceepoch": time.time(), "error.lat": 0, "error.lon": 0}
         self.decoder = json.JSONDecoder()
         self.weight = 0
         self.lock = Lock()
@@ -114,8 +114,10 @@ class Memory:
                 self.weight = 0
                 self.upl_queue.put(payload)
                 self.last_payload = payload
+                print('uploaded: ' + str(payload))
             else:
                 self.weight += 0.0167
+                print('weight is: ' + str(self.weight))
             return False
         finally:
             self.lock.release()

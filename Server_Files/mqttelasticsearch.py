@@ -33,9 +33,11 @@ def main():
             if 'error' not in payload:
                 if payload["meta.type"] == "wifilocation":
                     payload["meta.messageepoch"] = messagetime
+                    print(payload)
                     mem.geolocate(payload)
                 else:
                     payload["meta.messageepoch"] = messagetime
+                    print(payload)
                     mem.geocode(payload)
 
         client = mqtt.Client('ec2instance', clean_session=False, userdata='ec2instance')
