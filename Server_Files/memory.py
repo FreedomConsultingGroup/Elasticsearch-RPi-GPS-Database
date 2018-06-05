@@ -312,7 +312,7 @@ class Geolocator(threading.Thread):
         self.log_queue = log_queue
         self.api_key = api_key
         self.__stop = False
-        self.last_payload = {}
+        self.last_payload = {'loc': {'lat': 0, 'lon': 0}, 'meta.deviceepoch': 0}
 
     def run(self):
         while 1:
