@@ -1,11 +1,6 @@
 #!/usr/bin/python3
-import json
-import sys
-import math
-import queue
-import threading
-import time
-import requests
+import json, sys, queue, threading, time, requests
+from asyncio import Lock
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 import geohash
 
@@ -43,6 +38,7 @@ class Memory:
         self.last_payload = {"loc": {"lat": 0.0, "lon": 0.0}, "meta.deviceepoch": time.time()}
         self.decoder = json.JSONDecoder()
         self.weight = 0
+        self.lock = Lock()
 
         self.log_queue = queue.Queue()
         self.log = Log(self.log_queue)
@@ -103,22 +99,29 @@ class Memory:
         :param payload: payload to geocode
         :return: True if it's geocoding, false otherwise
         """
-        geo_hash, lat_error, lon_error = geohash.geohash(payload["loc"]["lat"], payload["loc"]["lon"], 35)
+        yield from self.lock
+        try:
+            geo_hash, lat_error, lon_error = geohash.geohash(payload["loc"]["lat"], payload["loc"]["lon"], 35)
+            avg_error = (payload["error.lat"] + payload["error.lon"] + self.last_payload["error.lat"] + self.last_payload["error.lon"]) / 4
 
-        if abs(payload["loc"]["lat"] - self.last_payload["loc"]["lat"]) < 0.000450503 + lat_error and \
-                abs(payload["loc"]["lon"] - self.last_payload["loc"]["lon"]) < (0.000449152 * math.cos(math.radians(payload["loc"]["lat"]))) + lon_error:
-            if abs(payload["meta.deviceepoch"] - self.last_payload["meta.deviceepoch"]) > 180:
-                self.search_else_insert(geo_hash, payload)
-                self.last_payload = payload
-                return True
-        if payload["pos.speed"] > 2:
-            payload['meta.weight'] = self.weight
-            self.weight = 0
-            self.upl_queue.put(payload)
-        else:
-            self.weight += 0.0167
-        self.last_payload = payload
-        return False
+            if geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"], self.last_payload["loc"]["lon"]) < 50 + avg_error:
+                if abs(payload["meta.deviceepoch"] - self.last_payload["meta.deviceepoch"]) > 180:
+                    self.search_else_insert(geo_hash, payload)
+                    self.last_payload = payload
+                    self.geolocator.last_payload = payload
+                    return True
+            if payload["pos.speed"] > 2:
+                payload['meta.weight'] = self.weight
+                self.weight = 0
+                self.upl_queue.put(payload)
+            else:
+                self.weight += 0.0167
+
+            self.last_payload = payload
+            self.geolocator.last_payload = payload
+            return False
+        finally:
+            self.lock.release()
 
     def search_else_insert(self, geo_hash: str, payload: dict, precision: int=None):
         """
@@ -313,6 +316,7 @@ class Geolocator(threading.Thread):
         self.log_queue = log_queue
         self.api_key = api_key
         self.__stop = False
+        self.last_payload = {}
 
     def run(self):
         while 1:
@@ -334,7 +338,7 @@ class Geolocator(threading.Thread):
                     payload['loc'] = {'lat': location['lat'], 'lon': location['lng']}
                     payload['error.lat'] = error
                     payload['error.lon'] = error
-                    # TODO Find a way to get some rough estimation of speed
+                    payload['pos.speed'] = geohash.haversine(location['lat'], location['lng'], self.last_payload['loc']['lat'], self.last_payload['loc']['lon']) / (self.last_payload['meta.deviceepoch'] - payload['meta.deviceepoch'])
                     self.memory.geocode(payload)
                 else:
                     response.raise_for_status()

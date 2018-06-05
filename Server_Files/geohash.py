@@ -1,3 +1,5 @@
+import cmath
+
 # Base 32 as defined by Douglass Crockford, also with 'A' omitted and 'U' included
 # https://en.wikipedia.org/wiki/Base32#Crockford's_Base32
 CROCKFORDBASE32_bin = {'0': '00000', '1': '00001', '2': '00010', '3': '00011', '4': '00100', '5': '00101',
@@ -119,8 +121,50 @@ def ungeohash(s, dec_precision=6):
     return lat, lat_error, lon, lon_error
 
 
-# test function
-if __name__ == '__main__':
-    geo_hash = geohash(39.184038, -76.851789)  # dqcqgjnpxd0eq
-    print(geo_hash)
-    print(ungeohash(geo_hash[0]))
+def haversine(lat1, lon1, lat2, lon2):
+    """
+    The Haversine formula calculates the distance between two points over a sphere.
+
+    This formula, combined with the radius of the earth at the given latitude, can be used to calculate the distance
+    between two points very accurately.
+
+    It is proven to be more accurate than the traditional formula, which is only accurate to about +- 8 to 10 meters
+        (that is, 1 lat = 111.111 km and 1 lon = 111.111 * (cos(lat)) km)
+
+
+    :param lat1: first latitude, in decimal degrees
+    :param lon1: first longitude, in decimal degrees
+    :param lat2: second latitude, in decimal degrees
+    :param lon2: second longitude, in decimal degrees
+    :return: the distance between the two points, in meters
+    """
+    lat1, lon1, lat2, lon2 = map(lambda lat: lat * cmath.pi * 180, [lat1, lon1, lat2, lon2])
+    hav_lat = cmath.sin((lat2 - lat1) / 2)**2
+    hav_lon = cmath.sin((lon2 - lon1) / 2)**2
+    r = R(lat2)
+    return 2 * r * cmath.asin(cmath.sqrt(hav_lat + (cmath.cos(lat1) * cmath.cos(lat2) * hav_lon)))
+
+
+def R(lat):
+    """
+    Calculates the radius of the earth at a given latitude, in meters
+
+    6378137: radius of earth at equator, in meters
+    6356752.3: radius of earth at equator, in meters
+
+    Formula:    ___________________________________________
+               |(Re^2 * cos(lat))^2 + (Rp^2 * sin(lat))^2
+    R(lat) =  | ------------------------------------------
+            \|  (Re * cos(lat))^2 + (Rp * sin(lat))^2
+
+    Where
+        Re: equatorial radius of earth, in meters
+        Rp: polar radius of earth, in meters
+        lat: latitude, in radians
+    :param lat: latitude, in decimal degrees
+    :return: radius of earth, in meters
+    """
+    latr = lat * cmath.pi / 180
+    cos_latr = cmath.cos(latr)
+    sin_latr = cmath.sin(latr)
+    return cmath.sqrt(((6378137**2 * cos_latr)**2 + (6356752.3**2 * sin_latr)**2) / ((6378137 * cos_latr)**2 + (6356752.3 * sin_latr)**2))
