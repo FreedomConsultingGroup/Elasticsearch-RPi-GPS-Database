@@ -1,4 +1,4 @@
-import cmath
+import math
 
 # Base 32 as defined by Douglass Crockford, also with 'A' omitted and 'U' included
 # https://en.wikipedia.org/wiki/Base32#Crockford's_Base32
@@ -138,11 +138,12 @@ def haversine(lat1, lon1, lat2, lon2):
     :param lon2: second longitude, in decimal degrees
     :return: the distance between the two points, in meters
     """
-    lat1, lon1, lat2, lon2 = map(lambda lat: lat * cmath.pi * 180, [lat1, lon1, lat2, lon2])
-    hav_lat = cmath.sin((lat2 - lat1) / 2)**2
-    hav_lon = cmath.sin((lon2 - lon1) / 2)**2
+    lat1, lon1, lat2, lon2 = map(lambda lat: lat * math.pi / 180, [lat1, lon1, lat2, lon2])
+    hav_lat = math.sin((lat2 - lat1) / 2)**2
+    hav_lon = math.sin((lon2 - lon1) / 2)**2
     r = R(lat2)
-    return 2 * r * cmath.asin(cmath.sqrt(hav_lat + (cmath.cos(lat1) * cmath.cos(lat2) * hav_lon)))
+    h = hav_lat + (math.cos(lat1) * math.cos(lat2) * hav_lon)
+    return 2 * r * math.asin(math.sqrt(h))
 
 
 def R(lat):
@@ -161,10 +162,9 @@ def R(lat):
         Re: equatorial radius of earth, in meters
         Rp: polar radius of earth, in meters
         lat: latitude, in radians
-    :param lat: latitude, in decimal degrees
+    :param lat: latitude, in radians
     :return: radius of earth, in meters
     """
-    latr = lat * cmath.pi / 180
-    cos_latr = cmath.cos(latr)
-    sin_latr = cmath.sin(latr)
-    return cmath.sqrt(((6378137**2 * cos_latr)**2 + (6356752.3**2 * sin_latr)**2) / ((6378137 * cos_latr)**2 + (6356752.3 * sin_latr)**2))
+    cos_latr = math.cos(lat)
+    sin_latr = math.sin(lat)
+    return math.sqrt(((6378137**2 * cos_latr)**2 + (6356752.3**2 * sin_latr)**2) / ((6378137 * cos_latr)**2 + (6356752.3 * sin_latr)**2))

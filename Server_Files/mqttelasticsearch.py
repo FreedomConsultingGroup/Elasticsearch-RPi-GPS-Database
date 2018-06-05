@@ -38,7 +38,6 @@ def main():
                     payload["meta.messageepoch"] = messagetime
                     mem.geocode(payload)
 
-
         client = mqtt.Client('ec2instance', clean_session=False, userdata='ec2instance')
         client.username_pw_set(usrnm, passwd)
         client.on_connect = on_connect
