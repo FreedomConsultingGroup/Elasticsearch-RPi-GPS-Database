@@ -30,12 +30,14 @@ def main():
         def on_message(client, userdata, msg):
             messagetime = time.time()
             payload = mem.verify(msg.payload)
-            if payload["meta.type"] == "wifilocation":
-                payload["meta.messageepoch"] = messagetime
-                mem.geolocate(payload)
-            elif 'error' not in payload:
-                payload["meta.messageepoch"] = messagetime
-                mem.geocode(payload)
+            if 'error' not in payload:
+                if payload["meta.type"] == "wifilocation":
+                    payload["meta.messageepoch"] = messagetime
+                    mem.geolocate(payload)
+                else:
+                    payload["meta.messageepoch"] = messagetime
+                    mem.geocode(payload)
+
 
         client = mqtt.Client('ec2instance', clean_session=False, userdata='ec2instance')
         client.username_pw_set(usrnm, passwd)
