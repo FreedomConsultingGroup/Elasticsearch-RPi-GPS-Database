@@ -108,17 +108,14 @@ class Memory:
                 if abs(payload["meta.deviceepoch"] - self.last_payload["meta.deviceepoch"]) > 180:
                     self.search_else_insert(geo_hash, payload)
                     self.last_payload = payload
-                    self.geolocator.last_payload = payload
                     return True
             if payload["pos.speed"] > 2:
                 payload['meta.weight'] = self.weight
                 self.weight = 0
                 self.upl_queue.put(payload)
+                self.last_payload = payload
             else:
                 self.weight += 0.0167
-
-            self.last_payload = payload
-            self.geolocator.last_payload = payload
             return False
         finally:
             self.lock.release()
@@ -292,7 +289,6 @@ class Geocoder(threading.Thread):
                 for dictn in location['address_components']:
                     payload['geo.'+dictn['types'][0]] = dictn['long_name']
 
-
                 self.upl_queue.put(payload)
             except KeyboardInterrupt:
                 exit(0)
@@ -340,6 +336,7 @@ class Geolocator(threading.Thread):
                     payload['error.lon'] = error
                     payload['pos.speed'] = geohash.haversine(location['lat'], location['lng'], self.last_payload['loc']['lat'], self.last_payload['loc']['lon']) / (self.last_payload['meta.deviceepoch'] - payload['meta.deviceepoch'])
                     self.memory.geocode(payload)
+                    self.last_payload = payload
                 else:
                     response.raise_for_status()
             except KeyboardInterrupt:
