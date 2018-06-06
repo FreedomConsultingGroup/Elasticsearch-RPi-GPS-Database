@@ -124,7 +124,10 @@ class Memory:
                 self.last_payload = payload
                 print('uploaded: ' + str(payload))
             else:
-                self.weight += 0.0167
+                if payload['meta.type'] == 'wifilocation':
+                    self.weight += 0.167
+                else:
+                    self.weight += 0.0167
                 print('weight is: ' + str(self.weight))
             return False
         finally:
@@ -323,7 +326,7 @@ class Geolocator(threading.Thread):
         self.log_queue = log_queue
         self.api_key = api_key
         self.__stop = False
-        self.last_payload = {'loc': {'lat': 0, 'lon': 0}, 'meta.deviceepoch': 0}
+        self.last_payload = None
 
     def run(self):
         while 1:
@@ -346,7 +349,10 @@ class Geolocator(threading.Thread):
                     payload['loc'] = {'lat': location['lat'], 'lon': location['lng']}
                     payload['error.lat'] = error
                     payload['error.lon'] = error
-                    payload['pos.speed'] = geohash.haversine(location['lat'], location['lng'], self.last_payload['loc']['lat'], self.last_payload['loc']['lon']) / (self.last_payload['meta.deviceepoch'] - payload['meta.deviceepoch'])
+                    if self.last_payload is None:
+                        payload['speed'] = 0
+                    else:
+                        payload['pos.speed'] = geohash.haversine(location['lat'], location['lng'], self.last_payload['loc']['lat'], self.last_payload['loc']['lon']) / (payload['meta.deviceepoch'] - self.last_payload['meta.deviceepoch'])
                     print(location['lat'], location['lng'])
                     self.memory.geocode(payload)
                     print(payload)
