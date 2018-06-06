@@ -331,6 +331,7 @@ class Geolocator(threading.Thread):
                 elif self.glo_queue.empty():
                     time.sleep(1)
                     continue
+                print("something in queue")
                 payload = self.glo_queue.get()
                 jsonpayload = {"wifiAccessPoints": payload["wifiAccessPoints"], }
                 response = requests.post(url="https://www.googleapis.com/geolocation/v1/geolocate?key=" + self.api_key,
@@ -344,9 +345,11 @@ class Geolocator(threading.Thread):
                     payload['error.lat'] = error
                     payload['error.lon'] = error
                     payload['pos.speed'] = geohash.haversine(location['lat'], location['lng'], self.last_payload['loc']['lat'], self.last_payload['loc']['lon']) / (self.last_payload['meta.deviceepoch'] - payload['meta.deviceepoch'])
+                    print(location['lat'], location['lng'])
                     self.memory.geocode(payload)
                     self.last_payload = payload
                 else:
+                    print("something went wrong")
                     response.raise_for_status()
             except KeyboardInterrupt:
                 exit(0)
