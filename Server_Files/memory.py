@@ -347,6 +347,7 @@ class Geolocator(threading.Thread):
                     payload['pos.speed'] = geohash.haversine(location['lat'], location['lng'], self.last_payload['loc']['lat'], self.last_payload['loc']['lon']) / (self.last_payload['meta.deviceepoch'] - payload['meta.deviceepoch'])
                     print(location['lat'], location['lng'])
                     self.memory.geocode(payload)
+                    print(payload)
                     self.last_payload = payload
                 else:
                     print("something went wrong")
