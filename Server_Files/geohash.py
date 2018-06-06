@@ -173,3 +173,7 @@ def R(lat):
     cos_latr = math.cos(lat)
     sin_latr = math.sin(lat)
     return math.sqrt(((40680631590000 * cos_latr)**2 + (40408299800000 * sin_latr)**2) / ((6378137 * cos_latr)**2 + (6356752.3 * sin_latr)**2))
+
+
+if __name__ == "__main__":
+    print(haversine(39.324259, -76.700626, 38.941494, -77.042733))

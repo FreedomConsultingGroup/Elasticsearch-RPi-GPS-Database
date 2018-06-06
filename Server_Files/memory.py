@@ -114,6 +114,8 @@ class Memory:
                     self.search_else_insert(geo_hash, payload)
                     self.last_payload = payload
                     return True
+            else:
+                self.last_payload = payload
             if payload["pos.speed"] > 2:
                 print("speed < 2")
                 payload['meta.weight'] = self.weight
