@@ -100,16 +100,21 @@ class Memory:
         :return: True if it's geocoding, false otherwise
         """
         yield from self.lock
+        print("got lock")
         try:
             geo_hash, lat_error, lon_error = geohash.geohash(payload["loc"]["lat"], payload["loc"]["lon"], 35)
             avg_error = (payload["error.lat"] + payload["error.lon"] + self.last_payload["error.lat"] + self.last_payload["error.lon"]) / 4
 
+            print(geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"],
+                                    self.last_payload["loc"]["lon"]))
             if geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"], self.last_payload["loc"]["lon"]) < 50 + avg_error:
+                print("that is less than " + str(50 + avg_error))
                 if abs(payload["meta.deviceepoch"] - self.last_payload["meta.deviceepoch"]) > 180:
                     self.search_else_insert(geo_hash, payload)
                     self.last_payload = payload
                     return True
             if payload["pos.speed"] > 2:
+                print("speed < 2")
                 payload['meta.weight'] = self.weight
                 self.weight = 0
                 self.upl_queue.put(payload)
@@ -120,6 +125,7 @@ class Memory:
                 print('weight is: ' + str(self.weight))
             return False
         finally:
+            print("released lock")
             self.lock.release()
 
     def search_else_insert(self, geo_hash: str, payload: dict, precision: int=None):

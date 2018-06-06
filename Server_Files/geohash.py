@@ -125,12 +125,21 @@ def haversine(lat1, lon1, lat2, lon2):
     """
     The Haversine formula calculates the distance between two points over a sphere.
 
-    This formula, combined with the radius of the earth at the given latitude, can be used to calculate the distance
+    This formula, combined with the radius of the earth at the given latitude R(), can be used to calculate the distance
     between two points very accurately.
 
-    It is proven to be more accurate than the traditional formula, which is only accurate to about +- 8 to 10 meters
+    It is proven to be more accurate than the traditional "quick and dirty" formula, which is only accurate to
+    about +- 8 to 10 meters
         (that is, 1 lat = 111.111 km and 1 lon = 111.111 * (cos(lat)) km)
 
+    Formlula:                                          /   ___________________________________________________________\
+                                                      |   /      /lat2 - lat1\                           /lat2 - lat1\|
+    haversine(lat1, lon1, lat2, lon2) = 2 * r * arcsin|  / sin^2| -----------| + cos(lat1)cos(lat2)sin^2|------------||
+                                                      |\/       \     2      /                          \     2      /|
+    Where:                                            \                                                               /
+        r = R((lat1+lat2) / 2)
+        lat1, lon1 = the first point in decimal degrees
+        lat2, lon2 = the second point, in decimal degrees
 
     :param lat1: first latitude, in decimal degrees
     :param lon1: first longitude, in decimal degrees
@@ -138,12 +147,8 @@ def haversine(lat1, lon1, lat2, lon2):
     :param lon2: second longitude, in decimal degrees
     :return: the distance between the two points, in meters
     """
-    lat1, lon1, lat2, lon2 = map(lambda lat: lat * math.pi / 180, [lat1, lon1, lat2, lon2])
-    hav_lat = math.sin((lat2 - lat1) / 2)**2
-    hav_lon = math.sin((lon2 - lon1) / 2)**2
-    r = R(lat2)
-    h = hav_lat + (math.cos(lat1) * math.cos(lat2) * hav_lon)
-    return 2 * r * math.asin(math.sqrt(h))
+    lat1, lon1, lat2, lon2 = map(lambda lat: math.radians(lat), [lat1, lon1, lat2, lon2])
+    return 2 * R((lat1 + lat2) / 2) * math.asin(math.sqrt(math.sin((lat2 - lat1) / 2)**2 + (math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2)**2)))
 
 
 def R(lat):
@@ -154,17 +159,17 @@ def R(lat):
     6356752.3: radius of earth at equator, in meters
 
     Formula:    ___________________________________________
-               |(Re^2 * cos(lat))^2 + (Rp^2 * sin(lat))^2
-    R(lat) =  | ------------------------------------------
-            \|  (Re * cos(lat))^2 + (Rp * sin(lat))^2
+               /(Re^2 * cos(lat))^2 + (Rp^2 * sin(lat))^2
+    R(lat) =  / ------------------------------------------
+            \/  (Re * cos(lat))^2 + (Rp * sin(lat))^2
 
-    Where
-        Re: equatorial radius of earth, in meters
-        Rp: polar radius of earth, in meters
-        lat: latitude, in radians
+    Where:
+        Re = equatorial radius of earth, in meters
+        Rp = polar radius of earth, in meters
+        lat = latitude, in radians
     :param lat: latitude, in radians
     :return: radius of earth, in meters
     """
     cos_latr = math.cos(lat)
     sin_latr = math.sin(lat)
-    return math.sqrt(((6378137**2 * cos_latr)**2 + (6356752.3**2 * sin_latr)**2) / ((6378137 * cos_latr)**2 + (6356752.3 * sin_latr)**2))
+    return math.sqrt(((40680631590000 * cos_latr)**2 + (40408299800000 * sin_latr)**2) / ((6378137 * cos_latr)**2 + (6356752.3 * sin_latr)**2))

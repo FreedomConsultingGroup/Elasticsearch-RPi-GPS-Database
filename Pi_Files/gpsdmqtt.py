@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import paho.mqtt.client as mqtt
 import time, gpsd, sys
-from . import wifi
+import wifi
 import datetime
 
 
@@ -47,12 +47,15 @@ if __name__ == '__main__':
             client.loop_start()
             gpsd.connect()
             log.write("CONNECTING GPSD::: Connection successful. Starting Loop... \n\n")
+            last_response = gpsd.get_current()
 
             while True:
                 try:
                     gpsdresp = gpsd.get_current()
                     devtime_epoch = time.time()
                     dt = gpsdresp.get_time()
+                    if last_response.lat == gpsdresp.lat and last_response.lon == gpsdresp.lon:
+                        raise gpsd.NoFixError()
                     log.write("COLLECTED DATA::: gps location data\n")
 
                     if gpsdresp.lat != 0.0 and gpsdresp.lon != 0.0:
@@ -80,8 +83,11 @@ if __name__ == '__main__':
                                    "time.hour": dt.hour,
                                    "time.minute": dt.minute,
                                    "time.second": dt.second}
-                        log.write('SENT GPS MESSAGE::: Time: ' + devtime_epoch + '\n')
+                        log.write('SENT GPS MESSAGE::: Time: ' + str(devtime_epoch) + '\n')
                         client.publish(topic='gpsd_location', payload=str(payload))
+                        last_response = gpsdresp
+                    else:
+                        log.write("WARNING::: GPS has no fix, can't send data\n")
                     time.sleep(1)
                 except (gpsd.NoFixError, UserWarning):
                     try:
@@ -102,11 +108,11 @@ if __name__ == '__main__':
                             "time.hour": dt.hour,
                             "time.minute": dt.minute,
                             "time.second": dt.second}
-                        log.write('SENT WIFI MESSAGE::: Time: ' + devtime_epoch + '\n')
+                        client.publish(topic='gpsd_location', payload=str(payload))
+                        log.write('SENT WIFI MESSAGE::: Time: ' + str(devtime_epoch) + '\n')
                     except Exception as e:
                         log.write("ERROR::: error getting wifi data: " + str(sys.exc_info()))
                     finally:
-                        client.publish(topic='gpsd_location', payload=str(payload))
                         time.sleep(10)
                 except ConnectionError as err:
                     connection_refused = True
@@ -121,8 +127,9 @@ if __name__ == '__main__':
                             time.sleep(1)
         except OSError:
             time.sleep(1)
-        # finally:
-            # logz = open('/home/pi/GPSDMQTT/gpsdmqttlog.log_' + str(int(time.time())) + '.gz', 'w')
-            # logz.write(zlib.compress(open('/home/pi/GPSDMQTT/gpsdmqttlog.log', 'r').read(), 5))
-            # logz.close()
-            # os.remove('/home/pi/GPSDMQTT/gpsdmqttlog.log')
+        finally:
+            log.close()
+        #     logz = open('/home/pi/GPSDMQTT/gpsdmqttlog.log_' + str(int(time.time())) + '.gz', 'w')
+        #     logz.write(zlib.compress(open('/home/pi/GPSDMQTT/gpsdmqttlog.log', 'r').read(), 5))
+        #     logz.close()
+        #     os.remove('/home/pi/GPSDMQTT/gpsdmqttlog.log')
