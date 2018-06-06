@@ -100,7 +100,7 @@ class Memory:
         :return: True if it's geocoding, false otherwise
         """
         print("trying for lock")
-        yield from self.lock
+        # yield from self.lock
         print("got lock")
         try:
             geo_hash, lat_error, lon_error = geohash.geohash(payload["loc"]["lat"], payload["loc"]["lon"], 35)
@@ -127,7 +127,7 @@ class Memory:
             return False
         finally:
             print("released lock")
-            self.lock.release()
+            # self.lock.release()
 
     def search_else_insert(self, geo_hash: str, payload: dict, precision: int=None):
         """
@@ -350,12 +350,11 @@ class Geolocator(threading.Thread):
                     print(payload)
                     self.last_payload = payload
                 else:
-                    print("something went wrong")
                     response.raise_for_status()
             except KeyboardInterrupt:
                 exit(0)
             except:
-                print("Geolocator Error: " + str(sys.exc_info()))
+                self.log_queue.put(("Geolocator", "Error: " + str(sys.exc_info())))
                 continue
 
     def stop_thread(self):
