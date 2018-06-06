@@ -11,12 +11,12 @@ CROCKFORDBASE32_bin = {'0': '00000', '1': '00001', '2': '00010', '3': '00011', '
 CROCKFORDBASE32_alpha = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k',
                          'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z')
 
-"""Geohashing is a method used to compress latitude and longitude coordinates into base 32 based on the precision of the
- coordinates. For a detailed explanation with an example, see the Wikipedia article dedicated to it: 
+"""Geohashing is a method used to compress latitude and longitude coordinates into base 32, based on the precision of
+ the coordinates. For a detailed explanation with an example, see the Wikipedia article dedicated to it: 
                                                                                 https://en.wikipedia.org/wiki/Geohash
  
  Basically, an "average" is selected from a minimum and maximum, beginning at (-90, 90) for latitude, and (-180, 180)
- for longitude, which both average to 0. Each even bit is dedicated to the longitude, and each odd bit is dedicated to
+ for longitude (which both average to 0). Each even bit is dedicated to the longitude, and each odd bit is dedicated to
  the latitude.
  
      For example, if the geohash "ezs42" is given, we decode it to binary using the above dictionary,

@@ -35,10 +35,12 @@ class Memory:
     """
     def __init__(self, api_key, aws_auth):
         self.first = MemoryBranch()
-        self.last_payload = {"loc": {"lat": 0.0, "lon": 0.0}, "meta.deviceepoch": time.time(), "error.lat": 0, "error.lon": 0}
+
         self.decoder = json.JSONDecoder()
+
+        self.last_payload = {"loc": {"lat": 0.0, "lon": 0.0}, "meta.deviceepoch": time.time(), "error.lat": 0, "error.lon": 0}
         self.weight = 0
-        self.lock = Lock()
+        # self.lock = Lock()
 
         self.log_queue = queue.Queue()
         self.log = Log(self.log_queue)
@@ -140,7 +142,7 @@ class Memory:
         """
         Searches for specified geo_hash to a given precision, inserts it if it doesnt find it.
 
-        Abstraction of geocode method. Only called if the user stays within a specified area for a specified amount
+        inner method of geocode(). Only called if the user stays within a specified area for a specified amount
         of time.
 
         :param geo_hash: geohash to search for
@@ -167,13 +169,17 @@ class Memory:
                 return False
 
         if level == precision:
+            for key, value in current.value:
+                if key.startswith('geo.'):
+                    payload[key] = value
+            self.upl_queue.put(payload)
             return True
         self.insert(self.first, geo_hash, payload)
         return False
 
     def insert(self, top, geo_hash, payload):
         """
-        Inner method to the search_else_insert method. Abstracts the actual insertion of geohashes into the tree
+        Inner method to search_else_insert(). Abstracts the actual insertion of geohashes into the tree
 
         :param top: The node at which to start inserting values
         :param geo_hash: the geo_hash (or part of a geo_hash if top is not the same as self.first) to insert into the tree
@@ -304,7 +310,7 @@ class Geocoder(threading.Thread):
                 payload["meta.type"] = "geocode"
                 for dictn in location['address_components']:
                     payload['geo.'+dictn['types'][0]] = dictn['long_name']
-
+                payload['geo.formatted_address'] = location['formatted_address']
                 self.upl_queue.put(payload)
             except KeyboardInterrupt:
                 exit(0)
