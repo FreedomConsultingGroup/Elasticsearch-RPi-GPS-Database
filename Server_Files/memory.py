@@ -302,7 +302,7 @@ class Geocoder(threading.Thread):
             except KeyboardInterrupt:
                 exit(0)
             except:
-                print("Geocoder Error: " + str(sys.exc_info()))
+                self.log_queue.put(("Geocoder", "Error: " + str(sys.exc_info())))
                 continue
 
     def stop_thread(self):
@@ -396,7 +396,7 @@ class Uploader(threading.Thread):
             except KeyboardInterrupt:
                 exit(0)
             except:
-                self.log_queue.put(("Uploader", "Error: " + str(sys.exc_info()) + "\n"))
+                print("Uploader Error: " + str(sys.exc_info()) + "\n")
 
     def upload_location(self, payload):
         self.esnode.index(index=payload["meta.devID"], doc_type="location_data", body=payload)
@@ -436,6 +436,7 @@ class Log(threading.Thread):
                 self.log.close()
                 exit(0)
             except:
+                print("error")
                 time.sleep(0.5)
                 continue
 
