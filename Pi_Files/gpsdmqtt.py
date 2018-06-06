@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.5
 import paho.mqtt.client as mqtt
 import time, gpsd, sys
 import wifi
@@ -125,7 +125,7 @@ if __name__ == '__main__':
                         except ConnectionRefusedError:
                             log.write("CONNECTION REFUSED ERROR::: Connection refused, retrying... \n")
                             time.sleep(1)
-        except OSError:
+        except (OSError, UserWarning):
             time.sleep(1)
         finally:
             log.close()

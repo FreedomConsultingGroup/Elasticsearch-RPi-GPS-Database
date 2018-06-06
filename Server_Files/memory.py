@@ -99,6 +99,7 @@ class Memory:
         :param payload: payload to geocode
         :return: True if it's geocoding, false otherwise
         """
+        print("trying for lock")
         yield from self.lock
         print("got lock")
         try:
