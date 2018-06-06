@@ -31,13 +31,13 @@ def main():
             messagetime = time.time()
             payload = mem.verify(msg.payload)
             if 'error' not in payload:
-                print(payload['meta.deviceepoch'], payload['meta.type'])
+                # print(payload['meta.deviceepoch'], payload['meta.type'])
                 if payload["meta.type"] == "wifilocation":
                     payload["meta.messageepoch"] = messagetime
-                    print("geolocating")
+                    # print("geolocating")
                     mem.geolocate(payload)
                 else:
-                    print("geocoding")
+                    # print("geocoding")
                     payload["meta.messageepoch"] = messagetime
                     mem.geocode(payload)
 

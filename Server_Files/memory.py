@@ -99,39 +99,41 @@ class Memory:
         :param payload: payload to geocode
         :return: True if it's geocoding, false otherwise
         """
-        print("trying for lock")
+        # print("trying for lock")
         # yield from self.lock
-        print("got lock")
+        # print("got lock")
         try:
             geo_hash, lat_error, lon_error = geohash.geohash(payload["loc"]["lat"], payload["loc"]["lon"], 35)
             avg_error = (payload["error.lat"] + payload["error.lon"] + self.last_payload["error.lat"] + self.last_payload["error.lon"]) / 4
 
-            print(geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"],
-                                    self.last_payload["loc"]["lon"]))
+            # print(geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"],
+            #                         self.last_payload["loc"]["lon"]))
             if geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"], self.last_payload["loc"]["lon"]) < 50 + avg_error:
-                print("that is less than " + str(50 + avg_error))
+                # print("that is less than " + str(50 + avg_error))
                 if abs(payload["meta.deviceepoch"] - self.last_payload["meta.deviceepoch"]) > 180:
                     self.search_else_insert(geo_hash, payload)
                     self.last_payload = payload
                     return True
             else:
                 self.last_payload = payload
+
             if payload["pos.speed"] > 2:
-                print("speed < 2")
+                # print("speed < 2")
                 payload['meta.weight'] = self.weight
                 self.weight = 0
                 self.upl_queue.put(payload)
                 self.last_payload = payload
-                print('uploaded: ' + str(payload))
+                # print('uploaded: ' + str(payload))
             else:
                 if payload['meta.type'] == 'wifilocation':
                     self.weight += 0.167
                 else:
                     self.weight += 0.0167
-                print('weight is: ' + str(self.weight))
+                # print('weight is: ' + str(self.weight))
             return False
         finally:
-            print("released lock")
+            pass
+            # print("released lock")
             # self.lock.release()
 
     def search_else_insert(self, geo_hash: str, payload: dict, precision: int=None):
@@ -336,7 +338,7 @@ class Geolocator(threading.Thread):
                 elif self.glo_queue.empty():
                     time.sleep(1)
                     continue
-                print("something in queue")
+                # print("something in queue")
                 payload = self.glo_queue.get()
                 jsonpayload = {"wifiAccessPoints": payload["wifiAccessPoints"], }
                 response = requests.post(url="https://www.googleapis.com/geolocation/v1/geolocate?key=" + self.api_key,
@@ -353,9 +355,9 @@ class Geolocator(threading.Thread):
                         payload['speed'] = 0
                     else:
                         payload['pos.speed'] = geohash.haversine(location['lat'], location['lng'], self.last_payload['loc']['lat'], self.last_payload['loc']['lon']) / (payload['meta.deviceepoch'] - self.last_payload['meta.deviceepoch'])
-                    print(location['lat'], location['lng'])
+                    # print(location['lat'], location['lng'])
                     self.memory.geocode(payload)
-                    print(payload)
+                    # print(payload)
                     self.last_payload = payload
                 else:
                     response.raise_for_status()
