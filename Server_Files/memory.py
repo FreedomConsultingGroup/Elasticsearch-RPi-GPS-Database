@@ -358,7 +358,7 @@ class Geolocator(threading.Thread):
                     payload['error.lat'] = error
                     payload['error.lon'] = error
                     if self.last_payload is None:
-                        payload['speed'] = 0
+                        payload['pos.speed'] = 0
                     else:
                         payload['pos.speed'] = geohash.haversine(location['lat'], location['lng'], self.last_payload['loc']['lat'], self.last_payload['loc']['lon']) / (payload['meta.deviceepoch'] - self.last_payload['meta.deviceepoch'])
                     # print(location['lat'], location['lng'])
