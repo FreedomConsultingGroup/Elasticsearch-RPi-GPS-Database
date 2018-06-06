@@ -302,7 +302,7 @@ class Geocoder(threading.Thread):
             except KeyboardInterrupt:
                 exit(0)
             except:
-                self.log_queue.put(("Geocoder", "Error: " + str(sys.exc_info())))
+                print("Geocoder Error: " + str(sys.exc_info()))
                 continue
 
     def stop_thread(self):
