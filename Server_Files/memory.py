@@ -114,7 +114,7 @@ class Memory:
 
             # print(geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"],
             #                         self.last_payload["loc"]["lon"]))
-            if geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"], self.last_payload["loc"]["lon"]) < 50 + avg_error:
+            if geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"], self.last_payload["loc"]["lon"]) < 30 + avg_error:
                 # print("is less than " + str(50 + avg_error))
                 if abs(payload["meta.deviceepoch"] - self.last_payload["meta.deviceepoch"]) > 180:
                     if self.search_else_insert(geo_hash, payload):
@@ -122,7 +122,12 @@ class Memory:
                         self.recode = False
                         return True
                     self.last_payload = payload
-                if payload['meta.type'] == 'wifilocation':
+                elif payload["pos.speed"] > 2:
+                    # print("speed < 2")
+                    self.weight = 0
+                    self.upl_queue.put(payload)
+                    # print('uploaded: ' + str(payload))
+                elif payload['meta.type'] == 'wifilocation':
                     self.weight += 0.167
                 else:
                     self.weight += 0.0167
@@ -179,7 +184,7 @@ class Memory:
 
         if level == precision and current.children[0].is_leaf:
             if self.recode:
-                for key, value in dict(current.value).items():
+                for key, value in dict(current.children[0].value).items():
                     if key.startswith('geo.'):
                         payload[key] = value
                 current.value = payload
