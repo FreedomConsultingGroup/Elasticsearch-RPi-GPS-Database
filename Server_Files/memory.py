@@ -125,6 +125,12 @@ class Memory:
                         return False
                     self.last_payload = payload
                     return True
+                else:
+                    if payload['meta.type'] == 'wifilocation':
+                        self.weight += 0.167
+                    else:
+                        self.weight += 0.0167
+                    return False
 
             if payload["pos.speed"] > 2:
                 self.recode = True
