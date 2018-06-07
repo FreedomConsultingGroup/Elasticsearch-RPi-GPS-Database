@@ -127,7 +127,6 @@ class Memory:
                 return False
 
             if payload["pos.speed"] > 2:
-                self.recode = True
                 # print("speed < 2")
                 payload['meta.weight'] = self.weight
                 self.weight = 0
@@ -140,6 +139,7 @@ class Memory:
                 else:
                     self.weight += 0.0167
                 # print('weight is: ' + str(self.weight))
+            self.recode = True
             return False
         finally:
             pass
