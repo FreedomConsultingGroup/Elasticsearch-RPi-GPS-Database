@@ -108,6 +108,7 @@ class Memory:
         try:
             if self.last_payload is None:
                 self.last_payload = payload
+            payload['meta.weight'] = self.weight
             geo_hash, lat_error, lon_error = geohash.geohash(payload["loc"]["lat"], payload["loc"]["lon"], 35)
             avg_error = (payload["error.lat"] + payload["error.lon"] + self.last_payload["error.lat"] + self.last_payload["error.lon"]) / 4
 
@@ -128,7 +129,6 @@ class Memory:
 
             if payload["pos.speed"] > 2:
                 # print("speed < 2")
-                payload['meta.weight'] = self.weight
                 self.weight = 0
                 self.upl_queue.put(payload)
                 self.last_payload = payload
