@@ -156,7 +156,7 @@ class Memory:
         :param geo_hash: geohash to search for
         :param payload: payload to insert if geohash is not found
         :param precision: optional precision to search to. Defaults to length of geohash given
-        :return: True if geohash is found to the specified precision, False otherwise
+        :return: False if geohash is found to the specified precision, True if it is inserting it
         """
         current = self.first
         level = 0
@@ -174,7 +174,7 @@ class Memory:
 
             if digit_not_in_children:
                 self.insert(current, geo_hash[level:], payload)
-                return False
+                return True
 
         if level == precision and current.is_leaf:
             if self.recode:
@@ -183,10 +183,10 @@ class Memory:
                         payload[key] = value
                 current.value = payload
                 self.upl_queue.put(payload)
-                return False
-            return True
+                return True
+            return False
         self.insert(self.first, geo_hash, payload)
-        return False
+        return True
 
     def insert(self, top, geo_hash, payload):
         """
