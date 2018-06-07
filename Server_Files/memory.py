@@ -40,6 +40,7 @@ class Memory:
 
         self.last_payload = None
         self.weight = 0
+        self.recode = True
         # self.lock = Lock()
 
         self.log_queue = queue.Queue()
@@ -115,11 +116,18 @@ class Memory:
             if geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"], self.last_payload["loc"]["lon"]) < 50 + avg_error:
                 # print("that is less than " + str(50 + avg_error))
                 if abs(payload["meta.deviceepoch"] - self.last_payload["meta.deviceepoch"]) > 180:
-                    self.search_else_insert(geo_hash, payload)
+                    if self.search_else_insert(geo_hash, payload):
+                        self.recode = False
+                        if payload['meta.type'] == 'wifilocation':
+                            self.weight += 0.167
+                        else:
+                            self.weight += 0.0167
+                        return False
                     self.last_payload = payload
                     return True
 
             if payload["pos.speed"] > 2:
+                self.recode = True
                 # print("speed < 2")
                 payload['meta.weight'] = self.weight
                 self.weight = 0
@@ -169,10 +177,10 @@ class Memory:
                 return False
 
         if level == precision and current.is_leaf:
-            for key, value in dict(current.value):
-                if key.startswith('geo.'):
-                    payload[key] = value
-            self.upl_queue.put(payload)
+            if self.recode:
+                current.value = payload
+                self.geo_queue.put(payload)
+                return False
             return True
         self.insert(self.first, geo_hash, payload)
         return False
@@ -293,6 +301,7 @@ class Geocoder(threading.Thread):
         self.decoder = json.JSONDecoder()
         self.api_key = api_key
         self.log_queue = log_queue
+        self.daemon = True
 
     def run(self):
         while 1:
@@ -312,8 +321,6 @@ class Geocoder(threading.Thread):
                     payload['geo.'+dictn['types'][0]] = dictn['long_name']
                 payload['geo.formatted_address'] = location['formatted_address']
                 self.upl_queue.put(payload)
-            except KeyboardInterrupt:
-                exit(0)
             except:
                 self.log_queue.put(("Geocoder", "Error: " + str(sys.exc_info())))
                 continue
@@ -335,6 +342,7 @@ class Geolocator(threading.Thread):
         self.api_key = api_key
         self.__stop = False
         self.last_payload = None
+        self.daemon = True
 
     def run(self):
         while 1:
@@ -367,8 +375,6 @@ class Geolocator(threading.Thread):
                     self.last_payload = payload
                 else:
                     response.raise_for_status()
-            except KeyboardInterrupt:
-                exit(0)
             except:
                 self.log_queue.put(("Geolocator", "Error: " + str(sys.exc_info())))
                 continue
@@ -396,6 +402,7 @@ class Uploader(threading.Thread):
         )
         self.upl_queue = upl_queue
         self.log_queue = log_queue
+        self.daemon = True
 
     def run(self):
         while 1:
@@ -412,8 +419,6 @@ class Uploader(threading.Thread):
                     self.log_queue.put(("Uploader", "sent geocoded payload\n"))
                 else:
                     self.upload_location(payload)
-            except KeyboardInterrupt:
-                exit(0)
             except:
                 self.log_queue.put(("Uploader", "Error: " + str(sys.exc_info()) + "\n"))
 
@@ -440,6 +445,7 @@ class Log(threading.Thread):
         self.log = open("/home/ubuntu/FILES/mqtt-es/mqtt-es.log", "a")
         self.log_queue = log_queue
         self.__stop = False
+        self.daemon = True
 
     def run(self):
         while 1:
@@ -451,9 +457,6 @@ class Log(threading.Thread):
 
                 payload = self.log_queue.get()
                 self.log.write(str(time.time()) + " - " + payload[0] + ":   " + payload[1] + '\n')
-            except KeyboardInterrupt:
-                self.log.close()
-                exit(0)
             except:
                 print("error")
                 time.sleep(0.5)
