@@ -118,19 +118,13 @@ class Memory:
                 if abs(payload["meta.deviceepoch"] - self.last_payload["meta.deviceepoch"]) > 180:
                     if self.search_else_insert(geo_hash, payload):
                         self.recode = False
-                        if payload['meta.type'] == 'wifilocation':
-                            self.weight += 0.167
-                        else:
-                            self.weight += 0.0167
-                        return False
+                        return True
                     self.last_payload = payload
-                    return True
+                if payload['meta.type'] == 'wifilocation':
+                    self.weight += 0.167
                 else:
-                    if payload['meta.type'] == 'wifilocation':
-                        self.weight += 0.167
-                    else:
-                        self.weight += 0.0167
-                    return False
+                    self.weight += 0.0167
+                return False
 
             if payload["pos.speed"] > 2:
                 self.recode = True
