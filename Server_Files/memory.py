@@ -38,7 +38,7 @@ class Memory:
 
         self.decoder = json.JSONDecoder()
 
-        self.last_payload = {"loc": {"lat": 0.0, "lon": 0.0}, "meta.deviceepoch": time.time(), "error.lat": 0, "error.lon": 0}
+        self.last_payload = None
         self.weight = 0
         # self.lock = Lock()
 
@@ -105,6 +105,8 @@ class Memory:
         # yield from self.lock
         # print("got lock")
         try:
+            if self.last_payload is None:
+                self.last_payload = payload
             geo_hash, lat_error, lon_error = geohash.geohash(payload["loc"]["lat"], payload["loc"]["lon"], 35)
             avg_error = (payload["error.lat"] + payload["error.lon"] + self.last_payload["error.lat"] + self.last_payload["error.lon"]) / 4
 
@@ -116,8 +118,6 @@ class Memory:
                     self.search_else_insert(geo_hash, payload)
                     self.last_payload = payload
                     return True
-            else:
-                self.last_payload = payload
 
             if payload["pos.speed"] > 2:
                 # print("speed < 2")
@@ -168,8 +168,8 @@ class Memory:
                 self.insert(current, geo_hash[level:], payload)
                 return False
 
-        if level == precision:
-            for key, value in current.value:
+        if level == precision and current.is_leaf:
+            for key, value in dict(current.value):
                 if key.startswith('geo.'):
                     payload[key] = value
             self.upl_queue.put(payload)
