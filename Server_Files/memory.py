@@ -115,9 +115,10 @@ class Memory:
             # print(geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"],
             #                         self.last_payload["loc"]["lon"]))
             if geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"], self.last_payload["loc"]["lon"]) < 50 + avg_error:
-                # print("that is less than " + str(50 + avg_error))
+                # print("is less than " + str(50 + avg_error))
                 if abs(payload["meta.deviceepoch"] - self.last_payload["meta.deviceepoch"]) > 180:
                     if self.search_else_insert(geo_hash, payload):
+                        self.last_payload = payload
                         self.recode = False
                         return True
                     self.last_payload = payload
@@ -176,7 +177,7 @@ class Memory:
                 self.insert(current, geo_hash[level:], payload)
                 return True
 
-        if level == precision and current.is_leaf:
+        if level == precision and current.children[0].is_leaf:
             if self.recode:
                 for key, value in dict(current.value).items():
                     if key.startswith('geo.'):
