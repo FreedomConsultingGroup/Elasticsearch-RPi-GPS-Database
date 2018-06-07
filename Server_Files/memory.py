@@ -117,15 +117,16 @@ class Memory:
             if geohash.haversine(payload["loc"]["lat"], payload["loc"]["lon"], self.last_payload["loc"]["lat"], self.last_payload["loc"]["lon"]) < 30 + avg_error:
                 # print("is less than " + str(50 + avg_error))
                 if abs(payload["meta.deviceepoch"] - self.last_payload["meta.deviceepoch"]) > 180:
-                    if self.search_else_insert(geo_hash, payload):
+                    if self.searchelseinsert(geo_hash, payload):
                         self.last_payload = payload
                         self.recode = False
                         return True
                     self.last_payload = payload
                 elif payload["pos.speed"] > 2:
-                    # print("speed < 2")
+                    # print("speed > 2")
                     self.weight = 0
-                    self.upl_queue.put(payload)
+                    self.upl_queue.put(self.last_payload)
+                    self.last_payload = payload
                     # print('uploaded: ' + str(payload))
                 elif payload['meta.type'] == 'wifilocation':
                     self.weight += 0.167
@@ -134,9 +135,9 @@ class Memory:
                 return False
 
             if payload["pos.speed"] > 2:
-                # print("speed < 2")
+                # print("speed > 2")
                 self.weight = 0
-                self.upl_queue.put(payload)
+                self.upl_queue.put(self.last_payload)
                 self.last_payload = payload
                 # print('uploaded: ' + str(payload))
             else:
@@ -152,7 +153,7 @@ class Memory:
             # print("released lock")
             # self.lock.release()
 
-    def search_else_insert(self, geo_hash: str, payload: dict, precision: int=None):
+    def searchelseinsert(self, geo_hash: str, payload: dict, precision: int=None):
         """
         Searches for specified geo_hash to a given precision, inserts it if it doesnt find it.
 
