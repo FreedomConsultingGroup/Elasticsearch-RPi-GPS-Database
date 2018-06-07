@@ -125,7 +125,7 @@ class Memory:
                 elif payload["pos.speed"] > 2:
                     # print("speed > 2")
                     self.weight = 0
-                    self.upl_queue.put(self.last_payload)
+                    self.upl_queue.put(payload)
                     self.last_payload = payload
                     # print('uploaded: ' + str(payload))
                 elif payload['meta.type'] == 'wifilocation':
