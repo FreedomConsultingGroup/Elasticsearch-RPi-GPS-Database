@@ -178,8 +178,11 @@ class Memory:
 
         if level == precision and current.is_leaf:
             if self.recode:
+                for key, value in dict(current.value).items():
+                    if key.startswith('geo.'):
+                        payload[key] = value
                 current.value = payload
-                self.geo_queue.put(payload)
+                self.upl_queue.put(payload)
                 return False
             return True
         self.insert(self.first, geo_hash, payload)
